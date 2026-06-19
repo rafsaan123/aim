@@ -17,6 +17,7 @@ type Course = { id: string; title: string };
 type TestItem = {
   id: string;
   title: string;
+  durationMinutes: number | null;
   course: Course;
   _count: { questions: number; attempts: number };
 };
@@ -46,6 +47,7 @@ export default function AdminTestsPage() {
   const [courseId, setCourseId] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [durationMinutes, setDurationMinutes] = useState("");
   const [questions, setQuestions] = useState<QuestionDraft[]>([emptyQuestion()]);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -121,6 +123,7 @@ export default function AdminTestsPage() {
       courseId,
       title,
       description,
+      durationMinutes: durationMinutes ? parseInt(durationMinutes) : null,
       questions: questions.map((q) => ({
         type: q.type,
         question: q.question,
@@ -145,6 +148,7 @@ export default function AdminTestsPage() {
     setMessage("Test created successfully");
     setTitle("");
     setDescription("");
+    setDurationMinutes("");
     setQuestions([emptyQuestion()]);
     setTab("manage");
     load();
@@ -258,6 +262,15 @@ export default function AdminTestsPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={2}
+              />
+            </Field>
+            <Field label="Time limit (minutes)">
+              <Input
+                type="number"
+                min={1}
+                value={durationMinutes}
+                onChange={(e) => setDurationMinutes(e.target.value)}
+                placeholder="Leave empty for no time limit"
               />
             </Field>
           </Card>
@@ -381,6 +394,9 @@ export default function AdminTestsPage() {
                 <p className="mt-2 font-semibold">{t.title}</p>
                 <p className="text-xs text-muted">
                   {t._count.questions} questions · {t._count.attempts} attempts
+                  {t.durationMinutes
+                    ? ` · ${t.durationMinutes} min timer`
+                    : ""}
                 </p>
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   <Button

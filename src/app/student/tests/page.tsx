@@ -4,14 +4,20 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { MobileShell } from "@/components/mobile/MobileShell";
 import { Badge, Button, Card, EmptyState } from "@/components/ui";
+import { Clock } from "lucide-react";
 
 type TestItem = {
   id: string;
   title: string;
   description: string | null;
+  durationMinutes: number | null;
   course: { id: string; title: string };
   _count: { questions: number };
-  attempts: { status: string; obtainedMarks: number | null; totalMarks: number | null }[];
+  attempts: {
+    status: string;
+    obtainedMarks: number | null;
+    totalMarks: number | null;
+  }[];
 };
 
 export default function StudentTestsPage() {
@@ -26,7 +32,7 @@ export default function StudentTestsPage() {
   }, []);
 
   return (
-    <MobileShell title="Tests" subtitle="Take tests for your enrolled courses">
+    <MobileShell title="Tests" subtitle="Take timed tests for your courses">
       {loading ? (
         <p className="text-center text-sm text-muted">Loading tests...</p>
       ) : tests.length === 0 ? (
@@ -38,7 +44,9 @@ export default function StudentTestsPage() {
         <div className="space-y-3">
           {tests.map((test) => {
             const attempt = test.attempts[0];
-            const submitted = attempt?.status === "SUBMITTED" || attempt?.status === "GRADED";
+            const submitted =
+              attempt?.status === "SUBMITTED" || attempt?.status === "GRADED";
+            const inProgress = attempt?.status === "IN_PROGRESS";
 
             return (
               <Card key={test.id}>
@@ -47,9 +55,15 @@ export default function StudentTestsPage() {
                 {test.description ? (
                   <p className="mt-1 text-sm text-muted">{test.description}</p>
                 ) : null}
-                <p className="mt-2 text-xs text-muted">
-                  {test._count.questions} question(s)
-                </p>
+                <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">
+                  <span>{test._count.questions} question(s)</span>
+                  {test.durationMinutes ? (
+                    <span className="inline-flex items-center gap-1 text-primary">
+                      <Clock className="h-3 w-3" />
+                      {test.durationMinutes} min
+                    </span>
+                  ) : null}
+                </div>
 
                 {submitted ? (
                   <div className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-sm">
@@ -65,7 +79,9 @@ export default function StudentTestsPage() {
                   </div>
                 ) : (
                   <Link href={`/student/tests/${test.id}`} className="mt-3 block">
-                    <Button fullWidth>Start Test</Button>
+                    <Button fullWidth>
+                      {inProgress ? "Continue test" : "Start test"}
+                    </Button>
                   </Link>
                 )}
               </Card>

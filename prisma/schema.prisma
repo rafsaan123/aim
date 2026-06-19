@@ -74,14 +74,15 @@ model StudyMaterial {
 }
 
 model Test {
-  id          String        @id @default(cuid())
-  courseId    String
-  title       String
-  description String?
-  createdAt   DateTime      @default(now())
-  course      Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  questions   Question[]
-  attempts    TestAttempt[]
+  id              String        @id @default(cuid())
+  courseId        String
+  title           String
+  description     String?
+  durationMinutes Int?
+  createdAt       DateTime      @default(now())
+  course          Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  questions       Question[]
+  attempts        TestAttempt[]
 }
 
 model Question {
@@ -101,6 +102,7 @@ model TestAttempt {
   testId        String
   userId        String
   status        AttemptStatus @default(IN_PROGRESS)
+  startedAt     DateTime?
   submittedAt   DateTime?
   gradedAt      DateTime?
   totalMarks    Int?

@@ -32,7 +32,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { courseId, title, description, questions } = await request.json();
+  const { courseId, title, description, durationMinutes, questions } =
+    await request.json();
 
   if (!courseId || !title?.trim() || !questions?.length) {
     return NextResponse.json(
@@ -46,6 +47,10 @@ export async function POST(request: Request) {
       courseId,
       title: title.trim(),
       description: description?.trim() || null,
+      durationMinutes:
+        durationMinutes && durationMinutes > 0
+          ? Math.floor(durationMinutes)
+          : null,
       questions: {
         create: questions.map(
           (q: {

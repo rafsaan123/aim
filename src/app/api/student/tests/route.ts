@@ -3,6 +3,7 @@ import { AttemptStatus, Role } from "@/generated/prisma/client";
 import { requireSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { autoGradeMcqAnswers } from "@/lib/grading";
+import { isTestExpired } from "@/lib/test-timer";
 
 export async function GET() {
   const session = await requireSession(Role.STUDENT);
@@ -24,7 +25,7 @@ export async function GET() {
       _count: { select: { questions: true } },
       attempts: {
         where: { userId: session.id },
-        orderBy: { submittedAt: "desc" },
+        orderBy: { startedAt: "desc" },
         take: 1,
       },
     },
@@ -40,11 +41,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { testId, answers } = await request.json();
+  const { testId, attemptId, answers, autoSubmitted } = await request.json();
 
-  if (!testId || !answers?.length) {
+  if (!testId || !attemptId || !answers?.length) {
     return NextResponse.json(
-      { error: "Test ID and answers are required" },
+      { error: "Test ID, attempt ID, and answers are required" },
       { status: 400 }
     );
   }
@@ -69,32 +70,57 @@ export async function POST(request: Request) {
     );
   }
 
-  const existingAttempt = await db.testAttempt.findFirst({
+  const attempt = await db.testAttempt.findFirst({
     where: {
+      id: attemptId,
       testId,
       userId: session.id,
-      status: { in: [AttemptStatus.SUBMITTED, AttemptStatus.GRADED] },
+      status: AttemptStatus.IN_PROGRESS,
     },
   });
 
-  if (existingAttempt) {
+  if (!attempt) {
     return NextResponse.json(
-      { error: "You have already submitted this test" },
+      { error: "No active test session found" },
+      { status: 404 }
+    );
+  }
+
+  const timedOut = isTestExpired(attempt.startedAt, test.durationMinutes);
+  if (timedOut && !autoSubmitted) {
+    return NextResponse.json(
+      { error: "Time is up. Your test was auto-submitted." },
       { status: 409 }
     );
   }
 
-  const attempt = await db.testAttempt.create({
+  if (!autoSubmitted) {
+    const missing = test.questions.filter((q) => {
+      const answer = answers.find(
+        (a: { questionId: string }) => a.questionId === q.id
+      );
+      return !answer?.response?.trim();
+    });
+    if (missing.length) {
+      return NextResponse.json(
+        { error: "Please answer all questions before submitting." },
+        { status: 400 }
+      );
+    }
+  }
+
+  await db.answer.deleteMany({ where: { attemptId: attempt.id } });
+
+  const updated = await db.testAttempt.update({
+    where: { id: attempt.id },
     data: {
-      testId,
-      userId: session.id,
       status: AttemptStatus.SUBMITTED,
       submittedAt: new Date(),
       answers: {
         create: answers.map(
           (a: { questionId: string; response: string }) => ({
             questionId: a.questionId,
-            response: a.response.trim(),
+            response: (a.response || "").trim(),
           })
         ),
       },
@@ -102,6 +128,6 @@ export async function POST(request: Request) {
     include: { answers: { include: { question: true } } },
   });
 
-  const graded = await autoGradeMcqAnswers(attempt.id);
+  const graded = await autoGradeMcqAnswers(updated.id);
   return NextResponse.json({ attempt: graded }, { status: 201 });
 }

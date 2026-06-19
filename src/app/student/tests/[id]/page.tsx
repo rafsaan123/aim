@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MobileShell } from "@/components/mobile/MobileShell";
+import { TestTimer } from "@/components/tests/TestTimer";
 import { Button, Card, Field, Textarea } from "@/components/ui";
 
 type Question = {
@@ -17,6 +18,7 @@ type Test = {
   id: string;
   title: string;
   description: string | null;
+  durationMinutes: number | null;
   course: { title: string };
   questions: Question[];
 };
@@ -27,19 +29,35 @@ export default function TakeTestPage({
   params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
-  const [testId, setTestId] = useState<string>("");
+  const [testId, setTestId] = useState("");
+  const [attemptId, setAttemptId] = useState("");
   const [test, setTest] = useState<Test | null>(null);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const submittedRef = useRef(false);
 
   useEffect(() => {
     params.then(({ id }) => {
       setTestId(id);
-      fetch(`/api/student/results?testId=${id}`)
-        .then((r) => r.json())
-        .then((d) => setTest(d.test))
+      fetch(`/api/student/tests/${id}/start`, { method: "POST" })
+        .then(async (r) => {
+          const data = await r.json();
+          if (!r.ok) {
+            setError(data.error || "Unable to start test");
+            return;
+          }
+          if (data.expired) {
+            setError("Time is up for this test session.");
+            return;
+          }
+          setAttemptId(data.attemptId);
+          setTest(data.test);
+          setExpiresAt(data.expiresAt);
+        })
+        .catch(() => setError("Unable to start test."))
         .finally(() => setLoading(false));
     });
   }, [params]);
@@ -48,57 +66,75 @@ export default function TakeTestPage({
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
   }
 
-  async function handleSubmit() {
-    if (!test) return;
+  const handleSubmit = useCallback(
+    async (autoSubmitted = false) => {
+      if (!test || !attemptId || submittedRef.current) return;
+      submittedRef.current = true;
 
-    const missing = test.questions.filter((q) => !answers[q.id]?.trim());
-    if (missing.length) {
-      setError("Please answer all questions before submitting.");
-      return;
-    }
-
-    setSubmitting(true);
-    setError("");
-
-    try {
-      const res = await fetch("/api/student/tests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          testId: test.id,
-          answers: test.questions.map((q) => ({
-            questionId: q.id,
-            response: answers[q.id],
-          })),
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Failed to submit test");
-        return;
+      if (!autoSubmitted) {
+        const missing = test.questions.filter((q) => !answers[q.id]?.trim());
+        if (missing.length) {
+          submittedRef.current = false;
+          setError("Please answer all questions before submitting.");
+          return;
+        }
       }
 
-      router.push("/student/results");
-      router.refresh();
-    } catch {
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
+      setSubmitting(true);
+      setError("");
+
+      try {
+        const res = await fetch("/api/student/tests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            testId: test.id,
+            attemptId,
+            autoSubmitted,
+            answers: test.questions.map((q) => ({
+              questionId: q.id,
+              response: answers[q.id] || "",
+            })),
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          submittedRef.current = false;
+          setError(data.error || "Failed to submit test");
+          return;
+        }
+
+        router.push("/student/results");
+        router.refresh();
+      } catch {
+        submittedRef.current = false;
+        setError("Something went wrong. Please try again.");
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [answers, attemptId, router, test]
+  );
+
+  const handleExpire = useCallback(() => {
+    handleSubmit(true);
+  }, [handleSubmit]);
 
   if (loading) {
     return (
       <MobileShell title="Loading..." showNav={false}>
-        <p className="text-center text-sm text-muted">Loading test...</p>
+        <p className="text-center text-sm text-muted">Starting test...</p>
       </MobileShell>
     );
   }
 
   if (!test) {
     return (
-      <MobileShell title="Test not found" showNav={false}>
+      <MobileShell title="Test unavailable" showNav={false}>
+        <p className="mb-4 text-center text-sm text-danger">
+          {error || "Test not found"}
+        </p>
         <Button onClick={() => router.push("/student/tests")} fullWidth>
           Back to Tests
         </Button>
@@ -109,9 +145,19 @@ export default function TakeTestPage({
   return (
     <MobileShell
       title={test.title}
-      subtitle={test.course.title}
+      subtitle={
+        test.durationMinutes
+          ? `${test.course.title} · ${test.durationMinutes} min limit`
+          : test.course.title
+      }
       showNav={false}
     >
+      <TestTimer expiresAt={expiresAt} onExpire={handleExpire} />
+
+      {test.description ? (
+        <p className="mb-4 text-sm text-muted">{test.description}</p>
+      ) : null}
+
       <div className="space-y-4">
         {test.questions.map((q, index) => (
           <Card key={q.id}>
@@ -162,7 +208,11 @@ export default function TakeTestPage({
           </p>
         ) : null}
 
-        <Button onClick={handleSubmit} fullWidth disabled={submitting}>
+        <Button
+          onClick={() => handleSubmit(false)}
+          fullWidth
+          disabled={submitting}
+        >
           {submitting ? "Submitting..." : "Submit Test"}
         </Button>
       </div>
