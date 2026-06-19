@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
-import { Role } from "@/generated/prisma/client";
-import { requireSession } from "@/lib/auth";
+import {
+  canStudentAccessMaterial,
+  requireStudentSession,
+} from "@/lib/materials";
 import { db } from "@/lib/db";
 
 export async function GET() {
-  const session = await requireSession(Role.STUDENT);
+  const session = await requireStudentSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -18,7 +20,15 @@ export async function GET() {
 
   const materials = await db.studyMaterial.findMany({
     where: { courseId: { in: courseIds } },
-    include: { course: { select: { id: true, title: true } } },
+    select: {
+      id: true,
+      title: true,
+      fileName: true,
+      fileType: true,
+      mimeType: true,
+      createdAt: true,
+      course: { select: { id: true, title: true } },
+    },
     orderBy: { createdAt: "desc" },
   });
 

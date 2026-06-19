@@ -55,13 +55,21 @@ model Enrollment {
   @@unique([userId, courseId])
 }
 
+enum MaterialFileType {
+  PDF
+  IMAGE
+}
+
 model StudyMaterial {
-  id        String   @id @default(cuid())
+  id        String           @id @default(cuid())
   courseId  String
   title     String
-  content   String
-  createdAt DateTime @default(now())
-  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  fileName  String
+  fileType  MaterialFileType
+  mimeType  String
+  fileData  Bytes
+  createdAt DateTime         @default(now())
+  course    Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
 model Test {

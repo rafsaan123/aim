@@ -49,21 +49,6 @@ async function main() {
     create: { userId: student.id, courseId: course.id },
   });
 
-  const existingMaterial = await db.studyMaterial.findFirst({
-    where: { courseId: course.id, title: "Newton's Laws Summary" },
-  });
-
-  if (!existingMaterial) {
-    await db.studyMaterial.create({
-      data: {
-        courseId: course.id,
-        title: "Newton's Laws Summary",
-        content:
-          "1. First Law: An object remains at rest or in uniform motion unless acted upon by a net force.\n\n2. Second Law: F = ma\n\n3. Third Law: For every action, there is an equal and opposite reaction.",
-      },
-    });
-  }
-
   const existingTest = await db.test.findFirst({
     where: { courseId: course.id, title: "Physics Weekly Test 1" },
   });
