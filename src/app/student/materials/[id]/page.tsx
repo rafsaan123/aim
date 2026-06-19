@@ -11,6 +11,7 @@ import { Button } from "@/components/ui";
 type Material = {
   id: string;
   title: string;
+  description: string | null;
   fileName: string;
   fileType: "PDF" | "IMAGE";
   course: { title: string };
@@ -80,6 +81,12 @@ export default function MaterialViewerPage({
             Protected view — downloading, copying, and screenshots are restricted.
             Content is watermarked with your account.
           </div>
+
+          {material.description ? (
+            <div className="mb-4 rounded-xl border border-border bg-white p-4 text-sm leading-relaxed text-foreground">
+              {material.description}
+            </div>
+          ) : null}
 
           {material.fileType === "PDF" ? (
             <PdfViewer url={fileUrl} watermark={watermark} />

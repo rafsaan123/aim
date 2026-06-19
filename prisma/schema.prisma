@@ -61,15 +61,16 @@ enum MaterialFileType {
 }
 
 model StudyMaterial {
-  id        String           @id @default(cuid())
-  courseId  String
-  title     String
-  fileName  String
-  fileType  MaterialFileType
-  mimeType  String
-  fileData  Bytes
-  createdAt DateTime         @default(now())
-  course    Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  id          String           @id @default(cuid())
+  courseId    String
+  title       String
+  description String?
+  fileName    String
+  fileType    MaterialFileType
+  mimeType    String
+  fileData    Bytes
+  createdAt   DateTime         @default(now())
+  course      Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
 
 model Test {

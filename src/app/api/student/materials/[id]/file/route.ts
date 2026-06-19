@@ -5,6 +5,11 @@ import {
 } from "@/lib/materials";
 import { db } from "@/lib/db";
 
+function toBody(data: Uint8Array | Buffer) {
+  const bytes = Buffer.isBuffer(data) ? data : Buffer.from(data);
+  return new Uint8Array(bytes);
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -22,22 +27,22 @@ export async function GET(
 
   const material = await db.studyMaterial.findUnique({
     where: { id },
-    select: { fileData: true, mimeType: true, fileName: true },
+    select: { fileData: true, mimeType: true },
   });
 
-  if (!material) {
-    return new NextResponse("Not found", { status: 404 });
+  if (!material || toBody(material.fileData).byteLength === 0) {
+    return new NextResponse("File not found or empty", { status: 404 });
   }
 
-  return new NextResponse(material.fileData, {
+  const body = toBody(material.fileData);
+
+  return new NextResponse(body, {
     status: 200,
     headers: {
       "Content-Type": material.mimeType,
       "Content-Disposition": "inline",
       "Cache-Control": "no-store, no-cache, must-revalidate, private",
       "X-Content-Type-Options": "nosniff",
-      "X-Frame-Options": "DENY",
-      "Content-Security-Policy": "default-src 'none'; sandbox",
     },
   });
 }

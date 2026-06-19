@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AdminShell } from "@/components/mobile/AdminShell";
-import { Badge, Button, Card, Field, Input, Select } from "@/components/ui";
+import { Badge, Button, Card, Field, Input, Select, Textarea } from "@/components/ui";
 
 type Course = { id: string; title: string };
 type Material = {
@@ -20,6 +20,7 @@ export default function AdminMaterialsPage() {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [courseId, setCourseId] = useState("");
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -51,6 +52,7 @@ export default function AdminMaterialsPage() {
     const formData = new FormData();
     formData.append("courseId", courseId);
     formData.append("title", title);
+    formData.append("description", description);
     formData.append("file", file);
 
     const res = await fetch("/api/admin/materials", {
@@ -64,6 +66,7 @@ export default function AdminMaterialsPage() {
     } else {
       setMessage("Study material uploaded");
       setTitle("");
+      setDescription("");
       setFile(null);
       load();
     }
@@ -108,6 +111,14 @@ export default function AdminMaterialsPage() {
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Chapter 1: Introduction"
               required
+            />
+          </Field>
+          <Field label="Notes (optional text for students)">
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Short summary or instructions shown above the file"
+              rows={3}
             />
           </Field>
           <Field label="PDF or image file">

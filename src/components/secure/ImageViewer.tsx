@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { fetchMaterialFile } from "@/lib/fetch-material-file";
 import { WatermarkOverlay } from "./WatermarkOverlay";
 
 type ImageViewerProps = {
@@ -9,77 +10,89 @@ type ImageViewerProps = {
 };
 
 export function ImageViewer({ url, watermark }: ImageViewerProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [canvasEl, setCanvasEl] = useState<HTMLCanvasElement | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
-    let objectUrl: string | null = null;
+    setLoading(true);
+    setError("");
 
     async function loadImage() {
-      setLoading(true);
-      setError("");
-
       try {
-        const res = await fetch(url, { credentials: "include" });
-        if (!res.ok) throw new Error("Failed to load image");
+        const buffer = await fetchMaterialFile(url);
+        if (cancelled || !canvasEl) return;
 
-        const blob = await res.blob();
-        objectUrl = URL.createObjectURL(blob);
+        const blob = new Blob([buffer]);
+        const objectUrl = URL.createObjectURL(blob);
 
-        const img = new Image();
-        img.src = objectUrl;
+        try {
+          const img = new Image();
+          img.src = objectUrl;
 
-        await new Promise<void>((resolve, reject) => {
-          img.onload = () => resolve();
-          img.onerror = () => reject(new Error("Invalid image"));
-        });
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve();
+            img.onerror = () => reject(new Error("Invalid image file"));
+          });
 
-        if (cancelled || !canvasRef.current) return;
+          if (cancelled || !canvasEl) return;
 
-        const canvas = canvasRef.current;
-        const maxWidth = Math.min(window.innerWidth - 32, 720);
-        const scale = Math.min(1, maxWidth / img.width);
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
+          const maxWidth = Math.min(window.innerWidth - 32, 720);
+          const scale =
+            img.width > 0 ? Math.min(1, maxWidth / img.width) : 1;
+          const width = Math.max(1, Math.round(img.width * scale));
+          const height = Math.max(1, Math.round(img.height * scale));
 
-        const ctx = canvas.getContext("2d");
-        if (!ctx) throw new Error("Canvas unavailable");
+          canvasEl.width = width;
+          canvasEl.height = height;
 
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      } catch {
-        if (!cancelled) setError("Unable to load image.");
+          const ctx = canvasEl.getContext("2d");
+          if (!ctx) throw new Error("Canvas unavailable");
+
+          ctx.clearRect(0, 0, width, height);
+          ctx.drawImage(img, 0, 0, width, height);
+        } finally {
+          URL.revokeObjectURL(objectUrl);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            err instanceof Error ? err.message : "Unable to load image."
+          );
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
 
-    loadImage();
+    if (canvasEl) {
+      loadImage();
+    }
 
     return () => {
       cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [url]);
-
-  if (loading) {
-    return (
-      <p className="py-12 text-center text-sm text-muted">Loading image...</p>
-    );
-  }
-
-  if (error) {
-    return <p className="py-12 text-center text-sm text-danger">{error}</p>;
-  }
+  }, [url, canvasEl]);
 
   return (
-    <div className="relative overflow-hidden rounded-xl bg-white shadow-inner">
-      <canvas
-        ref={canvasRef}
-        className="mx-auto block max-w-full touch-none"
-      />
-      <WatermarkOverlay label={watermark} />
+    <div className="relative min-h-[240px] overflow-hidden rounded-xl bg-white shadow-inner">
+      {loading ? (
+        <p className="absolute inset-0 flex items-center justify-center text-sm text-muted">
+          Loading image...
+        </p>
+      ) : null}
+      {error ? (
+        <p className="px-4 py-12 text-center text-sm text-danger">{error}</p>
+      ) : (
+        <>
+          <canvas
+            ref={setCanvasEl}
+            className="mx-auto block max-w-full touch-none"
+          />
+          {!loading ? <WatermarkOverlay label={watermark} /> : null}
+        </>
+      )}
     </div>
   );
 }

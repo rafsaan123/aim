@@ -21,6 +21,7 @@ export async function GET(request: Request) {
     select: {
       id: true,
       title: true,
+      description: true,
       fileName: true,
       fileType: true,
       mimeType: true,
@@ -47,6 +48,7 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const courseId = formData.get("courseId")?.toString();
   const title = formData.get("title")?.toString();
+  const description = formData.get("description")?.toString();
   const file = formData.get("file");
 
   if (!courseId || !title?.trim() || !(file instanceof File)) {
@@ -79,6 +81,7 @@ export async function POST(request: Request) {
     data: {
       courseId,
       title: title.trim(),
+      description: description?.trim() || null,
       fileName: file.name,
       fileType,
       mimeType: fileType === MaterialFileType.PDF ? "application/pdf" : mimeType,
@@ -87,6 +90,7 @@ export async function POST(request: Request) {
     select: {
       id: true,
       title: true,
+      description: true,
       fileName: true,
       fileType: true,
       mimeType: true,
