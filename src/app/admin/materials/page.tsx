@@ -129,7 +129,7 @@ export default function AdminMaterialsPage() {
               required
             />
             <p className="mt-1 text-xs text-muted">
-              PDF, JPG, PNG, or WEBP · Max 4 MB · Students can view only
+              PDF, JPG, PNG, or WEBP · Max 4 MB · Downloads include student watermark
             </p>
           </Field>
           {error ? <p className="text-sm text-danger">{error}</p> : null}

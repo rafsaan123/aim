@@ -21,7 +21,7 @@ export function WatermarkOverlay({ label }: WatermarkOverlayProps) {
         ))}
       </div>
       <div className="absolute inset-x-0 bottom-3 z-30 text-center text-[10px] font-medium text-slate-500">
-        View only · Not for download or sharing
+        Watermarked · Downloadable with your account details
       </div>
     </div>
   );

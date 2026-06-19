@@ -29,7 +29,7 @@ export default function StudentMaterialsPage() {
   return (
     <MobileShell
       title="Study Materials"
-      subtitle="View-only PDFs and images for your courses"
+      subtitle="PDFs and images with your account watermark"
     >
       {loading ? (
         <p className="text-center text-sm text-muted">Loading materials...</p>

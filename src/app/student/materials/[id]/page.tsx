@@ -7,6 +7,7 @@ import { ImageViewer } from "@/components/secure/ImageViewer";
 import { PdfViewer } from "@/components/secure/PdfViewer";
 import { SecureViewerShell } from "@/components/secure/SecureViewerShell";
 import { Button } from "@/components/ui";
+import { Download } from "lucide-react";
 
 type Material = {
   id: string;
@@ -32,6 +33,7 @@ export default function MaterialViewerPage({
   const [material, setMaterial] = useState<Material | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -60,14 +62,49 @@ export default function MaterialViewerPage({
     ? `/api/student/materials/${materialId}/file`
     : "";
 
+  async function handleDownload() {
+    if (!materialId || !material) return;
+
+    setDownloading(true);
+    try {
+      const res = await fetch(
+        `/api/student/materials/${materialId}/download`,
+        { credentials: "include" }
+      );
+
+      if (!res.ok) {
+        setError("Download failed. Please try again.");
+        return;
+      }
+
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") || "";
+      const match = disposition.match(/filename="(.+)"/);
+      const filename = match?.[1] || `watermarked-${material.fileName}`;
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("Download failed. Please try again.");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   return (
     <MobileShell
       title={material?.title || "Study Material"}
-      subtitle={material ? `${material.course.title} · View only` : undefined}
+      subtitle={
+        material ? `${material.course.title} · Watermarked copy` : undefined
+      }
       showNav={false}
     >
       {loading ? (
-        <p className="text-center text-sm text-muted">Opening secure viewer...</p>
+        <p className="text-center text-sm text-muted">Opening viewer...</p>
       ) : error || !material ? (
         <div className="space-y-3">
           <p className="text-center text-sm text-danger">{error || "Not found"}</p>
@@ -77,9 +114,9 @@ export default function MaterialViewerPage({
         </div>
       ) : (
         <SecureViewerShell>
-          <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-            Protected view — downloading, copying, and screenshots are restricted.
-            Content is watermarked with your account.
+          <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs text-indigo-800">
+            Content is watermarked with your name and email. Downloads include
+            the same watermark embedded in the file.
           </div>
 
           {material.description ? (
@@ -95,9 +132,19 @@ export default function MaterialViewerPage({
           )}
 
           <Button
-            variant="secondary"
             fullWidth
             className="mt-4"
+            onClick={handleDownload}
+            disabled={downloading}
+          >
+            <Download className="h-4 w-4" />
+            {downloading ? "Preparing download..." : "Download watermarked copy"}
+          </Button>
+
+          <Button
+            variant="secondary"
+            fullWidth
+            className="mt-3"
             onClick={() => router.push("/student/materials")}
           >
             Close viewer
