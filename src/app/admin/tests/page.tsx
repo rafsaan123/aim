@@ -17,6 +17,7 @@ type Course = { id: string; title: string };
 type TestItem = {
   id: string;
   title: string;
+  format: "ONLINE" | "WRITTEN";
   durationMinutes: number | null;
   course: Course;
   _count: { questions: number; attempts: number };
@@ -47,6 +48,7 @@ export default function AdminTestsPage() {
   const [courseId, setCourseId] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [testFormat, setTestFormat] = useState<"ONLINE" | "WRITTEN">("ONLINE");
   const [durationMinutes, setDurationMinutes] = useState("");
   const [questions, setQuestions] = useState<QuestionDraft[]>([emptyQuestion()]);
   const [message, setMessage] = useState("");
@@ -106,7 +108,7 @@ export default function AdminTestsPage() {
     setMessage("");
 
     for (const q of questions) {
-      if (q.type === "MCQ") {
+      if (testFormat === "ONLINE" && q.type === "MCQ") {
         const filled = q.options.filter(Boolean);
         if (filled.length < 2) {
           setError("Each MCQ needs at least 2 options.");
@@ -123,9 +125,10 @@ export default function AdminTestsPage() {
       courseId,
       title,
       description,
+      format: testFormat,
       durationMinutes: durationMinutes ? parseInt(durationMinutes) : null,
       questions: questions.map((q) => ({
-        type: q.type,
+        type: testFormat === "WRITTEN" ? "SHORT_ANSWER" : q.type,
         question: q.question,
         options: q.type === "MCQ" ? q.options.filter(Boolean) : undefined,
         correctAnswer: q.type === "MCQ" ? q.correctAnswer : undefined,
@@ -148,6 +151,7 @@ export default function AdminTestsPage() {
     setMessage("Test created successfully");
     setTitle("");
     setDescription("");
+    setTestFormat("ONLINE");
     setDurationMinutes("");
     setQuestions([emptyQuestion()]);
     setTab("manage");
@@ -264,15 +268,35 @@ export default function AdminTestsPage() {
                 rows={2}
               />
             </Field>
-            <Field label="Time limit (minutes)">
-              <Input
-                type="number"
-                min={1}
-                value={durationMinutes}
-                onChange={(e) => setDurationMinutes(e.target.value)}
-                placeholder="Leave empty for no time limit"
-              />
+            <Field label="Test type">
+              <Select
+                value={testFormat}
+                onChange={(e) => {
+                  const format = e.target.value as "ONLINE" | "WRITTEN";
+                  setTestFormat(format);
+                  if (format === "WRITTEN") {
+                    setDurationMinutes("");
+                    setQuestions((prev) =>
+                      prev.map((q) => ({ ...q, type: "SHORT_ANSWER" }))
+                    );
+                  }
+                }}
+              >
+                <option value="ONLINE">Online test (MCQ + short answer in app)</option>
+                <option value="WRITTEN">Written test (questions on paper, submit answers)</option>
+              </Select>
             </Field>
+            {testFormat === "ONLINE" ? (
+              <Field label="Time limit (minutes)">
+                <Input
+                  type="number"
+                  min={1}
+                  value={durationMinutes}
+                  onChange={(e) => setDurationMinutes(e.target.value)}
+                  placeholder="Leave empty for no time limit"
+                />
+              </Field>
+            ) : null}
           </Card>
 
           {questions.map((q, index) => (
@@ -292,7 +316,12 @@ export default function AdminTestsPage() {
                 ) : null}
               </div>
 
-              <Field label="Type">
+            <Field label="Type">
+              {testFormat === "WRITTEN" ? (
+                <p className="rounded-xl bg-slate-50 px-3 py-2 text-sm text-muted">
+                  Written questions (manually graded)
+                </p>
+              ) : (
                 <Select
                   value={q.type}
                   onChange={(e) =>
@@ -307,7 +336,8 @@ export default function AdminTestsPage() {
                   </option>
                   <option value="MCQ">Multiple Choice (auto-graded)</option>
                 </Select>
-              </Field>
+              )}
+            </Field>
 
               <Field label="Question">
                 <Textarea
@@ -319,7 +349,7 @@ export default function AdminTestsPage() {
                 />
               </Field>
 
-              {q.type === "MCQ" ? (
+              {testFormat === "ONLINE" && q.type === "MCQ" ? (
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-slate-700">
                     Options — tap ○ to mark correct answer
@@ -391,10 +421,13 @@ export default function AdminTestsPage() {
             tests.map((t) => (
               <Card key={t.id}>
                 <Badge>{t.course.title}</Badge>
+                <Badge tone={t.format === "ONLINE" ? "default" : "success"}>
+                  {t.format === "ONLINE" ? "Online" : "Written"}
+                </Badge>
                 <p className="mt-2 font-semibold">{t.title}</p>
                 <p className="text-xs text-muted">
                   {t._count.questions} questions · {t._count.attempts} attempts
-                  {t.durationMinutes
+                  {t.format === "ONLINE" && t.durationMinutes
                     ? ` · ${t.durationMinutes} min timer`
                     : ""}
                 </p>

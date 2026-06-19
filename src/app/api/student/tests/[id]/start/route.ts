@@ -27,6 +27,13 @@ export async function POST(
     return NextResponse.json({ error: "Test not found" }, { status: 404 });
   }
 
+  if (test.format === "WRITTEN") {
+    return NextResponse.json(
+      { error: "This is a written test. Use the written submission flow." },
+      { status: 400 }
+    );
+  }
+
   const enrolled = await db.enrollment.findFirst({
     where: { userId: session.id, courseId: test.courseId },
   });

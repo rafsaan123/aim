@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { AttemptStatus, QuestionType, Role } from "@/generated/prisma/client";
+import { AttemptStatus, QuestionType, Role, TestFormat } from "@/generated/prisma/client";
 import { requireSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { autoGradeMcqAnswers } from "@/lib/grading";
@@ -47,7 +47,10 @@ export async function PATCH(request: Request) {
 
   const attempt = await db.testAttempt.findUnique({
     where: { id: attemptId },
-    include: { answers: { include: { question: true } } },
+    include: {
+      answers: { include: { question: true } },
+      test: { select: { format: true } },
+    },
   });
 
   if (!attempt) {
@@ -60,9 +63,13 @@ export async function PATCH(request: Request) {
     feedback?: string;
   }[]) {
     const answer = attempt.answers.find((a) => a.id === grade.answerId);
-    if (!answer || answer.question.type !== QuestionType.SHORT_ANSWER) {
-      continue;
-    }
+    if (!answer) continue;
+
+    const manualGrade =
+      answer.question.type === QuestionType.SHORT_ANSWER ||
+      attempt.test.format === TestFormat.WRITTEN;
+
+    if (!manualGrade) continue;
 
     await db.answer.update({
       where: { id: grade.answerId },
@@ -77,3 +84,4 @@ export async function PATCH(request: Request) {
   const updated = await autoGradeMcqAnswers(attemptId);
   return NextResponse.json({ attempt: updated });
 }
+

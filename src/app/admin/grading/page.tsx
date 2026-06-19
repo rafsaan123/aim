@@ -13,6 +13,7 @@ type Attempt = {
   user: { name: string; email: string };
   test: {
     title: string;
+    format: "ONLINE" | "WRITTEN";
     course: { title: string };
     questions: { id: string; maxMarks: number }[];
   };
@@ -21,6 +22,7 @@ type Attempt = {
     response: string;
     marksAwarded: number | null;
     feedback: string | null;
+    attachmentFileName: string | null;
     question: {
       id: string;
       type: string;
@@ -48,10 +50,17 @@ export default function AdminGradingPage() {
     load();
   }, []);
 
+  function needsManualGrading(attempt: Attempt, answer: Attempt["answers"][0]) {
+    return (
+      attempt.test.format === "WRITTEN" ||
+      answer.question.type === "SHORT_ANSWER"
+    );
+  }
+
   function initGrades(attempt: Attempt) {
     const initial: Record<string, { marks: number; feedback: string }> = {};
     for (const answer of attempt.answers) {
-      if (answer.question.type === "SHORT_ANSWER") {
+      if (needsManualGrading(attempt, answer)) {
         initial[answer.id] = {
           marks: answer.marksAwarded ?? 0,
           feedback: answer.feedback ?? "",
@@ -63,8 +72,8 @@ export default function AdminGradingPage() {
   }
 
   async function submitGrades(attemptId: string, attempt: Attempt) {
-    const shortAnswers = attempt.answers.filter(
-      (a) => a.question.type === "SHORT_ANSWER"
+    const manualAnswers = attempt.answers.filter((a) =>
+      needsManualGrading(attempt, a)
     );
 
     const res = await fetch("/api/admin/grading", {
@@ -72,7 +81,7 @@ export default function AdminGradingPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         attemptId,
-        grades: shortAnswers.map((a) => ({
+        grades: manualAnswers.map((a) => ({
           answerId: a.id,
           marksAwarded: grades[a.id]?.marks ?? 0,
           feedback: grades[a.id]?.feedback ?? "",
@@ -110,6 +119,9 @@ export default function AdminGradingPage() {
           pending.map((attempt) => (
             <Card key={attempt.id}>
               <Badge tone="warning">Needs grading</Badge>
+              {attempt.test.format === "WRITTEN" ? (
+                <Badge tone="success">Written</Badge>
+              ) : null}
               <p className="mt-2 font-semibold">{attempt.test.title}</p>
               <p className="text-sm text-muted">
                 {attempt.user.name} · {attempt.test.course.title}
@@ -130,10 +142,26 @@ export default function AdminGradingPage() {
                       className="rounded-xl bg-slate-50 p-3 text-sm"
                     >
                       <p className="font-medium">{answer.question.question}</p>
-                      <p className="mt-1 text-muted">
-                        Answer: {answer.response}
-                      </p>
-                      {answer.question.type === "SHORT_ANSWER" ? (
+                      {answer.response ? (
+                        <p className="mt-1 text-muted">
+                          Answer: {answer.response}
+                        </p>
+                      ) : (
+                        <p className="mt-1 italic text-muted">No typed answer</p>
+                      )}
+                      {answer.attachmentFileName ? (
+                        <div className="mt-2">
+                          <p className="text-xs text-muted">
+                            Photo: {answer.attachmentFileName}
+                          </p>
+                          <img
+                            src={`/api/admin/answers/${answer.id}/attachment`}
+                            alt={`Answer photo for ${answer.question.question}`}
+                            className="mt-2 max-h-64 w-full rounded-lg border border-border object-contain bg-white"
+                          />
+                        </div>
+                      ) : null}
+                      {needsManualGrading(attempt, answer) ? (
                         <div className="mt-2 space-y-2">
                           <Field label={`Marks (max ${answer.question.maxMarks})`}>
                             <Input

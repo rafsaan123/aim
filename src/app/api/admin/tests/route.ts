@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { QuestionType, Role } from "@/generated/prisma/client";
+import { QuestionType, Role, TestFormat } from "@/generated/prisma/client";
 import { requireSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { courseId, title, description, durationMinutes, questions } =
+  const { courseId, title, description, durationMinutes, format, questions } =
     await request.json();
 
   if (!courseId || !title?.trim() || !questions?.length) {
@@ -42,13 +42,19 @@ export async function POST(request: Request) {
     );
   }
 
+  const testFormat =
+    format === TestFormat.WRITTEN ? TestFormat.WRITTEN : TestFormat.ONLINE;
+
   const test = await db.test.create({
     data: {
       courseId,
       title: title.trim(),
       description: description?.trim() || null,
+      format: testFormat,
       durationMinutes:
-        durationMinutes && durationMinutes > 0
+        testFormat === TestFormat.ONLINE &&
+        durationMinutes &&
+        durationMinutes > 0
           ? Math.floor(durationMinutes)
           : null,
       questions: {
@@ -60,14 +66,21 @@ export async function POST(request: Request) {
             correctAnswer?: string;
             maxMarks?: number;
           }) => ({
-            type: q.type,
+            type:
+              testFormat === TestFormat.WRITTEN
+                ? QuestionType.SHORT_ANSWER
+                : q.type,
             question: q.question.trim(),
             options:
-              q.type === QuestionType.MCQ && q.options
+              testFormat === TestFormat.ONLINE &&
+              q.type === QuestionType.MCQ &&
+              q.options
                 ? JSON.stringify(q.options)
                 : null,
             correctAnswer:
-              q.type === QuestionType.MCQ ? q.correctAnswer?.trim() : null,
+              testFormat === TestFormat.ONLINE && q.type === QuestionType.MCQ
+                ? q.correctAnswer?.trim()
+                : null,
             maxMarks: q.maxMarks || 1,
           })
         ),

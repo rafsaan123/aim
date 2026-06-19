@@ -10,6 +10,7 @@ type TestItem = {
   id: string;
   title: string;
   description: string | null;
+  format: "ONLINE" | "WRITTEN";
   durationMinutes: number | null;
   course: { id: string; title: string };
   _count: { questions: number };
@@ -32,7 +33,7 @@ export default function StudentTestsPage() {
   }, []);
 
   return (
-    <MobileShell title="Tests" subtitle="Take timed tests for your courses">
+    <MobileShell title="Tests" subtitle="Online and written tests for your courses">
       {loading ? (
         <p className="text-center text-sm text-muted">Loading tests...</p>
       ) : tests.length === 0 ? (
@@ -50,14 +51,19 @@ export default function StudentTestsPage() {
 
             return (
               <Card key={test.id}>
-                <Badge>{test.course.title}</Badge>
+                <div className="flex flex-wrap gap-2">
+                  <Badge>{test.course.title}</Badge>
+                  <Badge tone={test.format === "ONLINE" ? "default" : "success"}>
+                    {test.format === "ONLINE" ? "Online" : "Written"}
+                  </Badge>
+                </div>
                 <h3 className="mt-2 font-semibold">{test.title}</h3>
                 {test.description ? (
                   <p className="mt-1 text-sm text-muted">{test.description}</p>
                 ) : null}
                 <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted">
                   <span>{test._count.questions} question(s)</span>
-                  {test.durationMinutes ? (
+                  {test.format === "ONLINE" && test.durationMinutes ? (
                     <span className="inline-flex items-center gap-1 text-primary">
                       <Clock className="h-3 w-3" />
                       {test.durationMinutes} min
@@ -80,7 +86,13 @@ export default function StudentTestsPage() {
                 ) : (
                   <Link href={`/student/tests/${test.id}`} className="mt-3 block">
                     <Button fullWidth>
-                      {inProgress ? "Continue test" : "Start test"}
+                      {inProgress
+                        ? test.format === "WRITTEN"
+                          ? "Continue submission"
+                          : "Continue test"
+                        : test.format === "WRITTEN"
+                          ? "View questions & submit"
+                          : "Start test"}
                     </Button>
                   </Link>
                 )}

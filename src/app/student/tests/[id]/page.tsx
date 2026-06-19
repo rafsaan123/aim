@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MobileShell } from "@/components/mobile/MobileShell";
+import { WrittenTestPage } from "@/components/tests/WrittenTestPage";
 import { TestTimer } from "@/components/tests/TestTimer";
 import { Button, Card, Field, Textarea } from "@/components/ui";
 
@@ -23,12 +24,15 @@ type Test = {
   questions: Question[];
 };
 
+type PageMode = "loading" | "online" | "written";
+
 export default function TakeTestPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
+  const [mode, setMode] = useState<PageMode>("loading");
   const [testId, setTestId] = useState("");
   const [attemptId, setAttemptId] = useState("");
   const [test, setTest] = useState<Test | null>(null);
@@ -42,23 +46,38 @@ export default function TakeTestPage({
   useEffect(() => {
     params.then(({ id }) => {
       setTestId(id);
-      fetch(`/api/student/tests/${id}/start`, { method: "POST" })
-        .then(async (r) => {
-          const data = await r.json();
-          if (!r.ok) {
-            setError(data.error || "Unable to start test");
+
+      fetch(`/api/student/tests/${id}/written`)
+        .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+        .then(({ ok, d }) => {
+          if (ok && d.test) {
+            setMode("written");
+            setLoading(false);
             return;
           }
-          if (data.expired) {
-            setError("Time is up for this test session.");
-            return;
-          }
-          setAttemptId(data.attemptId);
-          setTest(data.test);
-          setExpiresAt(data.expiresAt);
+
+          setMode("online");
+          return fetch(`/api/student/tests/${id}/start`, { method: "POST" })
+            .then(async (r) => {
+              const data = await r.json();
+              if (!r.ok) {
+                setError(data.error || "Unable to start test");
+                return;
+              }
+              if (data.expired) {
+                setError("Time is up for this test session.");
+                return;
+              }
+              setAttemptId(data.attemptId);
+              setTest(data.test);
+              setExpiresAt(data.expiresAt);
+            })
+            .finally(() => setLoading(false));
         })
-        .catch(() => setError("Unable to start test."))
-        .finally(() => setLoading(false));
+        .catch(() => {
+          setError("Unable to load test.");
+          setLoading(false);
+        });
     });
   }, [params]);
 
@@ -121,7 +140,11 @@ export default function TakeTestPage({
     handleSubmit(true);
   }, [handleSubmit]);
 
-  if (loading) {
+  if (mode === "written") {
+    return <WrittenTestPage testId={testId} />;
+  }
+
+  if (loading || mode === "loading") {
     return (
       <MobileShell title="Loading..." showNav={false}>
         <p className="text-center text-sm text-muted">Starting test...</p>
@@ -147,8 +170,8 @@ export default function TakeTestPage({
       title={test.title}
       subtitle={
         test.durationMinutes
-          ? `${test.course.title} · ${test.durationMinutes} min limit`
-          : test.course.title
+          ? `${test.course.title} · Online · ${test.durationMinutes} min`
+          : `${test.course.title} · Online test`
       }
       showNav={false}
     >
