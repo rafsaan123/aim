@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { MobileShell } from "@/components/mobile/MobileShell";
 import { Badge, Card, EmptyState } from "@/components/ui";
+import { Scoreboard, type ScoreboardEntry } from "@/components/tests/Scoreboard";
 
 type Result = {
   id: string;
@@ -11,6 +12,7 @@ type Result = {
   obtainedMarks: number | null;
   totalMarks: number | null;
   test: {
+    id: string;
     title: string;
     course: { title: string };
   };
@@ -30,6 +32,11 @@ export default function StudentResultsPage() {
   const [results, setResults] = useState<Result[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [scoreboardTestId, setScoreboardTestId] = useState<string | null>(null);
+  const [scoreboardEntries, setScoreboardEntries] = useState<ScoreboardEntry[]>([]);
+  const [scoreboardTitle, setScoreboardTitle] = useState("");
+  const [myRank, setMyRank] = useState<number | null>(null);
+  const [scoreboardLoading, setScoreboardLoading] = useState(false);
 
   useEffect(() => {
     fetch("/api/student/results")
@@ -38,8 +45,25 @@ export default function StudentResultsPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  async function toggleScoreboard(testId: string, testTitle: string) {
+    if (scoreboardTestId === testId) {
+      setScoreboardTestId(null);
+      return;
+    }
+
+    setScoreboardTestId(testId);
+    setScoreboardTitle(testTitle);
+    setScoreboardLoading(true);
+
+    const res = await fetch(`/api/student/tests/${testId}/scoreboard`);
+    const data = await res.json();
+    setScoreboardEntries(data.entries || []);
+    setMyRank(data.myRank ?? null);
+    setScoreboardLoading(false);
+  }
+
   return (
-    <MobileShell title="Results" subtitle="Your test scores and feedback">
+    <MobileShell title="Results" subtitle="Your scores and class scoreboards">
       {loading ? (
         <p className="text-center text-sm text-muted">Loading results...</p>
       ) : results.length === 0 ? (
@@ -71,15 +95,28 @@ export default function StudentResultsPage() {
                 )}
               </div>
 
-              <button
-                type="button"
-                onClick={() =>
-                  setExpanded(expanded === result.id ? null : result.id)
-                }
-                className="mt-3 text-sm font-medium text-primary"
-              >
-                {expanded === result.id ? "Hide details" : "View details"}
-              </button>
+              <div className="mt-3 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpanded(expanded === result.id ? null : result.id)
+                  }
+                  className="text-sm font-medium text-primary"
+                >
+                  {expanded === result.id ? "Hide details" : "View details"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    toggleScoreboard(result.test.id, result.test.title)
+                  }
+                  className="text-sm font-medium text-primary"
+                >
+                  {scoreboardTestId === result.test.id
+                    ? "Hide scoreboard"
+                    : "Scoreboard"}
+                </button>
+              </div>
 
               {expanded === result.id ? (
                 <div className="mt-3 space-y-3 border-t border-border pt-3">
@@ -101,6 +138,22 @@ export default function StudentResultsPage() {
                       ) : null}
                     </div>
                   ))}
+                </div>
+              ) : null}
+
+              {scoreboardTestId === result.test.id ? (
+                <div className="mt-3 border-t border-border pt-3">
+                  <Scoreboard
+                    title={`${scoreboardTitle} — Class ranking`}
+                    subtitle={
+                      myRank
+                        ? `Your rank: #${myRank}`
+                        : "You are not ranked yet"
+                    }
+                    entries={scoreboardEntries}
+                    loading={scoreboardLoading}
+                    emptyMessage="No scores published for this test yet."
+                  />
                 </div>
               ) : null}
             </Card>

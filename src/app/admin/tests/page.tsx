@@ -11,6 +11,7 @@ import {
   Select,
   Textarea,
 } from "@/components/ui";
+import { Scoreboard, type ScoreboardEntry } from "@/components/tests/Scoreboard";
 
 type Course = { id: string; title: string };
 type TestItem = {
@@ -29,14 +30,17 @@ type QuestionDraft = {
 };
 
 const emptyQuestion = (): QuestionDraft => ({
-  type: "MCQ",
+  type: "SHORT_ANSWER",
   question: "",
   options: ["", "", "", ""],
   correctAnswer: "",
   maxMarks: 1,
 });
 
+type Tab = "create" | "manage";
+
 export default function AdminTestsPage() {
+  const [tab, setTab] = useState<Tab>("create");
   const [courses, setCourses] = useState<Course[]>([]);
   const [tests, setTests] = useState<TestItem[]>([]);
   const [courseId, setCourseId] = useState("");
@@ -46,6 +50,10 @@ export default function AdminTestsPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [scoreboardTestId, setScoreboardTestId] = useState<string | null>(null);
+  const [scoreboardTitle, setScoreboardTitle] = useState("");
+  const [scoreboardEntries, setScoreboardEntries] = useState<ScoreboardEntry[]>([]);
+  const [scoreboardLoading, setScoreboardLoading] = useState(false);
 
   async function load() {
     const res = await fetch("/api/admin/tests");
@@ -69,8 +77,23 @@ export default function AdminTestsPage() {
       prev.map((q, i) => {
         if (i !== qIndex) return q;
         const options = [...q.options];
+        const previous = options[oIndex];
         options[oIndex] = value;
-        return { ...q, options };
+        return {
+          ...q,
+          options,
+          correctAnswer:
+            q.correctAnswer === previous ? value : q.correctAnswer,
+        };
+      })
+    );
+  }
+
+  function selectCorrectOption(qIndex: number, oIndex: number) {
+    setQuestions((prev) =>
+      prev.map((q, i) => {
+        if (i !== qIndex) return q;
+        return { ...q, correctAnswer: q.options[oIndex] };
       })
     );
   }
@@ -79,6 +102,20 @@ export default function AdminTestsPage() {
     e.preventDefault();
     setError("");
     setMessage("");
+
+    for (const q of questions) {
+      if (q.type === "MCQ") {
+        const filled = q.options.filter(Boolean);
+        if (filled.length < 2) {
+          setError("Each MCQ needs at least 2 options.");
+          return;
+        }
+        if (!q.correctAnswer || !filled.includes(q.correctAnswer)) {
+          setError("Select the correct MCQ answer using the circle beside an option.");
+          return;
+        }
+      }
+    }
 
     const payload = {
       courseId,
@@ -109,6 +146,7 @@ export default function AdminTestsPage() {
     setTitle("");
     setDescription("");
     setQuestions([emptyQuestion()]);
+    setTab("manage");
     load();
   }
 
@@ -132,7 +170,11 @@ export default function AdminTestsPage() {
 
     const data = await res.json();
     if (res.ok) {
-      setMessage("Test and questions deleted");
+      setMessage("Test deleted");
+      if (scoreboardTestId === test.id) {
+        setScoreboardTestId(null);
+        setScoreboardEntries([]);
+      }
       load();
     } else {
       setError(data.error || "Failed to delete test");
@@ -140,164 +182,238 @@ export default function AdminTestsPage() {
     setDeletingId(null);
   }
 
+  async function loadScoreboard(test: TestItem) {
+    if (scoreboardTestId === test.id) {
+      setScoreboardTestId(null);
+      return;
+    }
+
+    setScoreboardTestId(test.id);
+    setScoreboardTitle(test.title);
+    setScoreboardLoading(true);
+
+    const res = await fetch(`/api/admin/tests/${test.id}/scoreboard`);
+    const data = await res.json();
+    setScoreboardEntries(data.entries || []);
+    setScoreboardLoading(false);
+  }
+
   return (
-    <AdminShell title="Create Tests">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <Card className="space-y-3">
-          <Field label="Course">
-            <Select
-              value={courseId}
-              onChange={(e) => setCourseId(e.target.value)}
-              required
-            >
-              <option value="">Select course</option>
-              {courses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.title}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Test title">
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Weekly Quiz 1"
-              required
-            />
-          </Field>
-          <Field label="Description">
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={2}
-            />
-          </Field>
-        </Card>
+    <AdminShell title="Tests">
+      <div className="mb-4 grid grid-cols-2 gap-2 rounded-xl bg-white p-1 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setTab("create")}
+          className={`rounded-lg py-2.5 text-sm font-semibold transition ${
+            tab === "create"
+              ? "bg-primary text-white"
+              : "text-muted hover:text-foreground"
+          }`}
+        >
+          Create test
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("manage")}
+          className={`rounded-lg py-2.5 text-sm font-semibold transition ${
+            tab === "manage"
+              ? "bg-primary text-white"
+              : "text-muted hover:text-foreground"
+          }`}
+        >
+          Manage tests
+        </button>
+      </div>
 
-        {questions.map((q, index) => (
-          <Card key={index} className="space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="font-semibold">Question {index + 1}</p>
-              {questions.length > 1 ? (
-                <button
-                  type="button"
-                  className="text-sm text-danger"
-                  onClick={() =>
-                    setQuestions((prev) => prev.filter((_, i) => i !== index))
-                  }
-                >
-                  Remove
-                </button>
-              ) : null}
-            </div>
+      {error ? <p className="mb-3 text-sm text-danger">{error}</p> : null}
+      {message ? <p className="mb-3 text-sm text-success">{message}</p> : null}
 
-            <Field label="Type">
+      {tab === "create" ? (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Card className="space-y-3">
+            <Field label="Course">
               <Select
-                value={q.type}
-                onChange={(e) =>
-                  updateQuestion(index, {
-                    type: e.target.value as "MCQ" | "SHORT_ANSWER",
-                  })
-                }
+                value={courseId}
+                onChange={(e) => setCourseId(e.target.value)}
+                required
               >
-                <option value="MCQ">Multiple Choice (auto-graded)</option>
-                <option value="SHORT_ANSWER">
-                  Short Answer (manual grading)
-                </option>
+                <option value="">Select course</option>
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.title}
+                  </option>
+                ))}
               </Select>
             </Field>
-
-            <Field label="Question">
-              <Textarea
-                value={q.question}
-                onChange={(e) =>
-                  updateQuestion(index, { question: e.target.value })
-                }
+            <Field label="Test title">
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Weekly Quiz 1"
                 required
               />
             </Field>
-
-            {q.type === "MCQ" ? (
-              <>
-                {q.options.map((opt, oi) => (
-                  <Field key={oi} label={`Option ${oi + 1}`}>
-                    <Input
-                      value={opt}
-                      onChange={(e) => updateOption(index, oi, e.target.value)}
-                    />
-                  </Field>
-                ))}
-                <Field label="Correct answer (must match an option)">
-                  <Input
-                    value={q.correctAnswer}
-                    onChange={(e) =>
-                      updateQuestion(index, { correctAnswer: e.target.value })
-                    }
-                    required
-                  />
-                </Field>
-              </>
-            ) : null}
-
-            <Field label="Marks">
-              <Input
-                type="number"
-                min={1}
-                value={q.maxMarks}
-                onChange={(e) =>
-                  updateQuestion(index, {
-                    maxMarks: parseInt(e.target.value) || 1,
-                  })
-                }
+            <Field label="Description">
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={2}
               />
             </Field>
           </Card>
-        ))}
 
-        <Button
-          type="button"
-          variant="secondary"
-          fullWidth
-          onClick={() => setQuestions((prev) => [...prev, emptyQuestion()])}
-        >
-          Add another question
-        </Button>
+          {questions.map((q, index) => (
+            <Card key={index} className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="font-semibold">Question {index + 1}</p>
+                {questions.length > 1 ? (
+                  <button
+                    type="button"
+                    className="text-sm text-danger"
+                    onClick={() =>
+                      setQuestions((prev) => prev.filter((_, i) => i !== index))
+                    }
+                  >
+                    Remove
+                  </button>
+                ) : null}
+              </div>
 
-        {error ? <p className="text-sm text-danger">{error}</p> : null}
-        {message ? <p className="text-sm text-success">{message}</p> : null}
+              <Field label="Type">
+                <Select
+                  value={q.type}
+                  onChange={(e) =>
+                    updateQuestion(index, {
+                      type: e.target.value as "MCQ" | "SHORT_ANSWER",
+                      correctAnswer: "",
+                    })
+                  }
+                >
+                  <option value="SHORT_ANSWER">
+                    Short Answer (manual grading)
+                  </option>
+                  <option value="MCQ">Multiple Choice (auto-graded)</option>
+                </Select>
+              </Field>
 
-        <Button type="submit" fullWidth>
-          Create test
-        </Button>
-      </form>
+              <Field label="Question">
+                <Textarea
+                  value={q.question}
+                  onChange={(e) =>
+                    updateQuestion(index, { question: e.target.value })
+                  }
+                  required
+                />
+              </Field>
 
-      <h2 className="mb-3 mt-6 text-sm font-semibold uppercase tracking-wide text-muted">
-        All tests ({tests.length})
-      </h2>
-      <div className="space-y-2">
-        {tests.map((t) => (
-          <Card key={t.id}>
-            <div className="flex items-start justify-between gap-3">
-              <div>
+              {q.type === "MCQ" ? (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-slate-700">
+                    Options — tap ○ to mark correct answer
+                  </p>
+                  {q.options.map((opt, oi) => (
+                    <label
+                      key={oi}
+                      className={`flex items-center gap-3 rounded-xl border px-3 py-2 transition ${
+                        q.correctAnswer === opt && opt !== ""
+                          ? "border-primary bg-indigo-50"
+                          : "border-border"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name={`mcq-correct-${index}`}
+                        className="h-4 w-4 accent-primary"
+                        checked={q.correctAnswer === opt && opt !== ""}
+                        onChange={() => selectCorrectOption(index, oi)}
+                      />
+                      <Input
+                        value={opt}
+                        onChange={(e) => updateOption(index, oi, e.target.value)}
+                        placeholder={`Option ${oi + 1}`}
+                        className="border-0 bg-transparent px-0 shadow-none focus:ring-0"
+                      />
+                    </label>
+                  ))}
+                </div>
+              ) : null}
+
+              <Field label="Marks">
+                <Input
+                  type="number"
+                  min={1}
+                  value={q.maxMarks}
+                  onChange={(e) =>
+                    updateQuestion(index, {
+                      maxMarks: parseInt(e.target.value) || 1,
+                    })
+                  }
+                />
+              </Field>
+            </Card>
+          ))}
+
+          <Button
+            type="button"
+            variant="secondary"
+            fullWidth
+            onClick={() => setQuestions((prev) => [...prev, emptyQuestion()])}
+          >
+            Add another question
+          </Button>
+
+          <Button type="submit" fullWidth>
+            Publish test
+          </Button>
+        </form>
+      ) : (
+        <div className="space-y-3">
+          {tests.length === 0 ? (
+            <Card>
+              <p className="text-sm text-muted">
+                No published tests yet. Create one in the Create test tab.
+              </p>
+            </Card>
+          ) : (
+            tests.map((t) => (
+              <Card key={t.id}>
                 <Badge>{t.course.title}</Badge>
                 <p className="mt-2 font-semibold">{t.title}</p>
                 <p className="text-xs text-muted">
                   {t._count.questions} questions · {t._count.attempts} attempts
                 </p>
-              </div>
-              <Button
-                variant="danger"
-                className="shrink-0 px-3 py-2 text-xs"
-                disabled={deletingId === t.id}
-                onClick={() => deleteTest(t)}
-              >
-                {deletingId === t.id ? "Deleting..." : "Delete"}
-              </Button>
-            </div>
-          </Card>
-        ))}
-      </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <Button
+                    variant="secondary"
+                    className="text-xs"
+                    onClick={() => loadScoreboard(t)}
+                  >
+                    {scoreboardTestId === t.id ? "Hide scoreboard" : "Scoreboard"}
+                  </Button>
+                  <Button
+                    variant="danger"
+                    className="text-xs"
+                    disabled={deletingId === t.id}
+                    onClick={() => deleteTest(t)}
+                  >
+                    {deletingId === t.id ? "Deleting..." : "Delete"}
+                  </Button>
+                </div>
+              </Card>
+            ))
+          )}
+
+          {scoreboardTestId ? (
+            <Scoreboard
+              title={`Scoreboard — ${scoreboardTitle}`}
+              subtitle="Ranked by score (highest first)"
+              entries={scoreboardEntries}
+              loading={scoreboardLoading}
+              emptyMessage="No student attempts yet for this test."
+            />
+          ) : null}
+        </div>
+      )}
     </AdminShell>
   );
 }
