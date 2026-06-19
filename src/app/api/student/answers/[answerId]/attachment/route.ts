@@ -21,11 +21,15 @@ export async function GET(
   const answer = await db.answer.findUnique({
     where: { id: answerId },
     include: {
-      attempt: { select: { userId: true, testId: true } },
+      attempt: { select: { userId: true, testId: true, status: true } },
     },
   });
 
-  if (!answer?.attachmentData || !answer.attachmentMimeType) {
+  if (
+    !answer?.attachmentData ||
+    !answer.attachmentMimeType ||
+    answer.attempt.status === "GRADED"
+  ) {
     return new NextResponse("Not found", { status: 404 });
   }
 

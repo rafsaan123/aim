@@ -24,10 +24,15 @@ export async function GET(
     select: {
       attachmentData: true,
       attachmentMimeType: true,
+      attempt: { select: { status: true } },
     },
   });
 
-  if (!answer?.attachmentData || !answer.attachmentMimeType) {
+  if (
+    !answer?.attachmentData ||
+    !answer.attachmentMimeType ||
+    answer.attempt.status === "GRADED"
+  ) {
     return new NextResponse("Not found", { status: 404 });
   }
 

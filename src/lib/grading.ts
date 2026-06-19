@@ -1,6 +1,17 @@
 import { AttemptStatus, QuestionType } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 
+async function clearAnswerAttachments(attemptId: string) {
+  await db.answer.updateMany({
+    where: { attemptId },
+    data: {
+      attachmentData: null,
+      attachmentMimeType: null,
+      attachmentFileName: null,
+    },
+  });
+}
+
 export async function autoGradeMcqAnswers(attemptId: string) {
   const attempt = await db.testAttempt.findUnique({
     where: { id: attemptId },
@@ -54,6 +65,10 @@ export async function autoGradeMcqAnswers(attemptId: string) {
     shortAnswerCount === 0 || allShortGraded
       ? AttemptStatus.GRADED
       : AttemptStatus.SUBMITTED;
+
+  if (status === AttemptStatus.GRADED) {
+    await clearAnswerAttachments(attemptId);
+  }
 
   return db.testAttempt.update({
     where: { id: attemptId },
