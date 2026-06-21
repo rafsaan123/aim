@@ -35,13 +35,17 @@ model User {
 }
 
 model Course {
-  id          String          @id @default(cuid())
-  title       String
-  description String?
-  createdAt   DateTime        @default(now())
-  enrollments Enrollment[]
-  materials   StudyMaterial[]
-  tests       Test[]
+  id           String          @id @default(cuid())
+  title        String
+  description  String?
+  themeColor   String          @default("#1d4ed8")
+  imageData    Bytes?
+  imageMimeType String?
+  imageFileName String?
+  createdAt    DateTime        @default(now())
+  enrollments  Enrollment[]
+  materials    StudyMaterial[]
+  tests        Test[]
 }
 
 model Enrollment {

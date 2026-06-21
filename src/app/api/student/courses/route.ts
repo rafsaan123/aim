@@ -25,8 +25,13 @@ export async function GET() {
 
   return NextResponse.json({
     courses: courses.map((e) => ({
-      ...e.course,
+      id: e.course.id,
+      title: e.course.title,
+      description: e.course.description,
+      themeColor: e.course.themeColor,
+      hasImage: Boolean(e.course.imageMimeType && e.course.imageFileName),
       enrolledAt: e.enrolledAt,
+      _count: e.course._count,
     })),
   });
 }

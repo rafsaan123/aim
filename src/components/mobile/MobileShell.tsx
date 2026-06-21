@@ -15,12 +15,12 @@ export function MobileShell({
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-background shadow-xl">
       <header className="safe-top sticky top-0 z-40 border-b border-border bg-primary px-4 pb-4 pt-6 text-white">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-indigo-200">
-          AIM Coaching
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-200">
+          AIM Engineering Job Coaching
         </p>
         <h1 className="mt-1 text-xl font-bold">{title}</h1>
         {subtitle ? (
-          <p className="mt-1 text-sm text-indigo-100">{subtitle}</p>
+          <p className="mt-1 text-sm text-blue-100">{subtitle}</p>
         ) : null}
       </header>
 

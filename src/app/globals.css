@@ -3,14 +3,15 @@
 :root {
   --background: #f4f6fb;
   --foreground: #0f172a;
-  --primary: #4f46e5;
-  --primary-dark: #4338ca;
+  --primary: #1d4ed8;
+  --primary-dark: #1e3a8a;
   --surface: #ffffff;
   --muted: #64748b;
   --border: #e2e8f0;
-  --success: #16a34a;
+  --success: #059669;
   --warning: #d97706;
   --danger: #dc2626;
+  --aim-orange: #ea580c;
 }
 
 @theme inline {

@@ -2,18 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { MobileShell } from "@/components/mobile/MobileShell";
-import { Badge, Card, EmptyState } from "@/components/ui";
-
-type Course = {
-  id: string;
-  title: string;
-  description: string | null;
-  enrolledAt: string;
-  _count: { materials: number; tests: number };
-};
+import { CourseCard, type CourseCardData } from "@/components/courses/CourseCard";
+import { EmptyState } from "@/components/ui";
 
 export default function StudentCoursesPage() {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<CourseCardData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,7 +17,7 @@ export default function StudentCoursesPage() {
   }, []);
 
   return (
-    <MobileShell title="Courses" subtitle="Your enrolled courses">
+    <MobileShell title="My Courses" subtitle="Your enrolled batches & programs">
       {loading ? (
         <p className="text-center text-sm text-muted">Loading courses...</p>
       ) : courses.length === 0 ? (
@@ -33,21 +26,9 @@ export default function StudentCoursesPage() {
           description="Ask your administrator to enroll you in a course."
         />
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {courses.map((course) => (
-            <Card key={course.id}>
-              <h3 className="font-semibold">{course.title}</h3>
-              {course.description ? (
-                <p className="mt-1 text-sm text-muted">{course.description}</p>
-              ) : null}
-              <div className="mt-3 flex gap-2">
-                <Badge>{course._count.materials} materials</Badge>
-                <Badge>{course._count.tests} tests</Badge>
-              </div>
-              <p className="mt-2 text-xs text-muted">
-                Enrolled {new Date(course.enrolledAt).toLocaleDateString()}
-              </p>
-            </Card>
+            <CourseCard key={course.id} course={course} />
           ))}
         </div>
       )}
