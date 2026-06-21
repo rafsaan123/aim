@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { execSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { createClient } from "@libsql/client";
+import { createClient } from "@libsql/client/web";
 
 const tursoUrl =
   process.env.TURSO_DATABASE_URL ||
@@ -12,6 +12,40 @@ const tursoUrl =
 const tursoToken = process.env.TURSO_AUTH_TOKEN;
 const databaseUrl = process.env.DATABASE_URL || "file:./dev.db";
 
+function tursoHost(url) {
+  try {
+    return new URL(url.replace("libsql://", "https://")).host;
+  } catch {
+    return "unknown";
+  }
+}
+
+async function withRetry(label, fn, attempts = 3) {
+  let lastError;
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`${label} failed (attempt ${i}/${attempts}): ${message}`);
+      if (i < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, i * 1500));
+      }
+    }
+  }
+  throw lastError;
+}
+
+function isIgnorableMigrationError(error) {
+  const message = (error instanceof Error ? error.message : String(error)).toLowerCase();
+  return (
+    message.includes("duplicate column") ||
+    message.includes("already exists") ||
+    message.includes("duplicate column name")
+  );
+}
+
 async function applyTursoMigrations() {
   if (!tursoUrl || !tursoToken) {
     throw new Error(
@@ -19,9 +53,15 @@ async function applyTursoMigrations() {
     );
   }
 
+  console.log(`Connecting to Turso (${tursoHost(tursoUrl)})...`);
+
   const client = createClient({
     url: tursoUrl,
     authToken: tursoToken,
+  });
+
+  await withRetry("Turso connection test", async () => {
+    await client.execute("SELECT 1");
   });
 
   await client.execute(`
@@ -64,7 +104,15 @@ async function applyTursoMigrations() {
       .filter(Boolean);
 
     for (const statement of statements) {
-      await client.execute(statement);
+      try {
+        await withRetry(`SQL in ${folder}`, () => client.execute(statement));
+      } catch (error) {
+        if (isIgnorableMigrationError(error)) {
+          console.log(`Skipping existing schema change in ${folder}`);
+          continue;
+        }
+        throw error;
+      }
     }
 
     await client.execute({
@@ -102,6 +150,12 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(error.message || error);
+  const message = error instanceof Error ? error.message : String(error);
+  const cause =
+    error instanceof Error && error.cause instanceof Error
+      ? error.cause.message
+      : null;
+  console.error("Migration failed:", message);
+  if (cause) console.error("Cause:", cause);
   process.exit(1);
 });
