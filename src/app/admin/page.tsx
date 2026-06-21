@@ -22,8 +22,8 @@ export default async function AdminDashboardPage() {
     ]);
 
   const stats = [
-    { label: "Students", value: students, href: "/admin/accounts" },
-    { label: "Courses", value: courses, href: "/admin/enrollments" },
+    { label: "Students", value: students, href: "/admin/users" },
+    { label: "Courses", value: courses, href: "/admin/courses" },
     { label: "Materials", value: materials, href: "/admin/materials" },
     { label: "Tests", value: tests, href: "/admin/tests" },
   ];

@@ -3,15 +3,15 @@ import type { ReactNode } from "react";
 import {
   BookOpen,
   ClipboardCheck,
+  GraduationCap,
   LayoutDashboard,
-  UserPlus,
   Users,
 } from "lucide-react";
 
 const links = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
-  { href: "/admin/accounts", label: "Accounts", icon: UserPlus },
-  { href: "/admin/enrollments", label: "Enroll", icon: Users },
+  { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/courses", label: "Courses", icon: GraduationCap },
   { href: "/admin/materials", label: "Materials", icon: BookOpen },
   { href: "/admin/tests", label: "Tests", icon: ClipboardCheck },
   { href: "/admin/grading", label: "Grading", icon: ClipboardCheck },
