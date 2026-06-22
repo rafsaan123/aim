@@ -1,5 +1,6 @@
 import { AttemptStatus, QuestionType } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
+import { notifyResultPublished } from "@/lib/notifications";
 
 async function clearAnswerAttachments(attemptId: string) {
   await db.answer.updateMany({
@@ -16,12 +17,20 @@ export async function autoGradeMcqAnswers(attemptId: string) {
   const attempt = await db.testAttempt.findUnique({
     where: { id: attemptId },
     include: {
+      user: { select: { name: true, email: true } },
       answers: { include: { question: true } },
-      test: { include: { questions: true } },
+      test: {
+        include: {
+          questions: true,
+          course: { select: { title: true } },
+        },
+      },
     },
   });
 
   if (!attempt) return null;
+
+  const wasGraded = attempt.status === AttemptStatus.GRADED;
 
   let obtainedMarks = 0;
   const totalMarks = attempt.test.questions.reduce(
@@ -70,7 +79,7 @@ export async function autoGradeMcqAnswers(attemptId: string) {
     await clearAnswerAttachments(attemptId);
   }
 
-  return db.testAttempt.update({
+  const updated = await db.testAttempt.update({
     where: { id: attemptId },
     data: {
       totalMarks,
@@ -79,4 +88,17 @@ export async function autoGradeMcqAnswers(attemptId: string) {
       gradedAt: status === AttemptStatus.GRADED ? new Date() : null,
     },
   });
+
+  if (!wasGraded && status === AttemptStatus.GRADED) {
+    notifyResultPublished({
+      studentName: attempt.user.name,
+      studentEmail: attempt.user.email,
+      courseTitle: attempt.test.course.title,
+      testTitle: attempt.test.title,
+      obtainedMarks,
+      totalMarks,
+    });
+  }
+
+  return updated;
 }

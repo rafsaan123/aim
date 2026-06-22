@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { QuestionType, Role, TestFormat } from "@/generated/prisma/client";
 import { requireSession } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { notifyNewTest } from "@/lib/notifications";
 
 export async function GET() {
   const session = await requireSession(Role.ADMIN);
@@ -90,6 +91,14 @@ export async function POST(request: Request) {
       course: { select: { id: true, title: true } },
       questions: true,
     },
+  });
+
+  notifyNewTest({
+    courseId: test.course.id,
+    courseTitle: test.course.title,
+    testTitle: test.title,
+    testFormat: test.format,
+    durationMinutes: test.durationMinutes,
   });
 
   return NextResponse.json({ test }, { status: 201 });

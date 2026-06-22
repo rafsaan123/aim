@@ -8,6 +8,7 @@ import {
   requireAdminSession,
 } from "@/lib/materials";
 import { db } from "@/lib/db";
+import { notifyNewMaterial } from "@/lib/notifications";
 
 export async function GET(request: Request) {
   const session = await requireAdminSession();
@@ -89,6 +90,12 @@ export async function POST(request: Request) {
       createdAt: true,
       course: { select: { id: true, title: true } },
     },
+  });
+
+  notifyNewMaterial({
+    courseId: material.course.id,
+    courseTitle: material.course.title,
+    materialTitle: material.title,
   });
 
   return NextResponse.json({ material }, { status: 201 });
