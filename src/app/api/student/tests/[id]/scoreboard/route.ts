@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { AttemptStatus, Role } from "@/generated/prisma/client";
 import { requireSession } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { buildScoreboardEntries } from "@/lib/scoreboard";
 
 export async function GET(
   _request: Request,
@@ -39,29 +40,9 @@ export async function GET(
     include: {
       user: { select: { id: true, name: true } },
     },
-    orderBy: [
-      { obtainedMarks: "desc" },
-      { submittedAt: "asc" },
-    ],
   });
 
-  const entries = attempts.map((attempt, index) => ({
-    rank: index + 1,
-    studentId: attempt.user.id,
-    name: attempt.user.name,
-    obtainedMarks: attempt.obtainedMarks,
-    totalMarks: attempt.totalMarks,
-    status: attempt.status,
-    isCurrentUser: attempt.user.id === session.id,
-    percentage:
-      attempt.obtainedMarks !== null &&
-      attempt.totalMarks &&
-      attempt.totalMarks > 0
-        ? Math.round((attempt.obtainedMarks / attempt.totalMarks) * 100)
-        : null,
-  }));
-
-  const myEntry = entries.find((e) => e.isCurrentUser) || null;
+  const { entries, myRank, myStatus } = buildScoreboardEntries(attempts, session.id);
 
   return NextResponse.json({
     test: {
@@ -70,6 +51,7 @@ export async function GET(
       course: test.course.title,
     },
     entries,
-    myRank: myEntry?.rank ?? null,
+    myRank,
+    myStatus,
   });
 }

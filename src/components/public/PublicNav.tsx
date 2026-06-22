@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { PageLink } from "@/components/public/PageLink";
 import { navLinks, site } from "@/lib/marketing-content";
 
 export function PublicNav() {
@@ -14,7 +14,7 @@ export function PublicNav() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0b1f3a]/90 backdrop-blur-lg safe-top">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-3" onClick={() => setOpen(false)}>
+        <PageLink href="/" className="flex items-center gap-3" onClick={() => setOpen(false)}>
           <Image
             src="/brand/aim-logo.png"
             alt={site.name}
@@ -26,13 +26,13 @@ export function PublicNav() {
             <p className="text-sm font-bold text-white">AIM Engineering</p>
             <p className="text-xs text-amber-300">Job Coaching</p>
           </div>
-        </Link>
+        </PageLink>
 
         <nav className="hidden items-center gap-1 md:flex">
           {navLinks.map((link) => {
             const active = pathname === link.href;
             return (
-              <Link
+              <PageLink
                 key={link.href}
                 href={link.href}
                 className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
@@ -42,15 +42,15 @@ export function PublicNav() {
                 }`}
               >
                 {link.label}
-              </Link>
+              </PageLink>
             );
           })}
-          <Link
+          <PageLink
             href={site.loginPath}
             className="ml-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-orange-600"
           >
             লগইন
-          </Link>
+          </PageLink>
         </nav>
 
         <button
@@ -69,7 +69,7 @@ export function PublicNav() {
             {navLinks.map((link) => {
               const active = pathname === link.href;
               return (
-                <Link
+                <PageLink
                   key={link.href}
                   href={link.href}
                   onClick={() => setOpen(false)}
@@ -78,16 +78,16 @@ export function PublicNav() {
                   }`}
                 >
                   {link.label}
-                </Link>
+                </PageLink>
               );
             })}
-            <Link
+            <PageLink
               href={site.loginPath}
               onClick={() => setOpen(false)}
               className="mt-2 rounded-xl bg-orange-500 px-4 py-3 text-center text-sm font-semibold text-white"
             >
               লগইন / পোর্টাল
-            </Link>
+            </PageLink>
           </nav>
         </div>
       ) : null}

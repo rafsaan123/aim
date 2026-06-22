@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, ClipboardList, GraduationCap } from "lucide-react";
+import { BookOpen, ClipboardList } from "lucide-react";
 import { Badge } from "@/components/ui";
 import { COURSE_THEME_PRESETS, getCourseTheme } from "@/lib/course-themes";
 
@@ -37,60 +37,48 @@ export function CourseCard({ course }: { course: CourseCardData }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-          <span
-            className="inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider"
-            style={{ backgroundColor: course.themeColor }}
-          >
-            AIM Course
-          </span>
-          <h3 className="mt-2 text-lg font-bold leading-tight">{course.title}</h3>
+          <h3 className="text-lg font-bold leading-tight">{course.title}</h3>
         </div>
       </div>
 
       <div className="space-y-3 p-4">
         {course.description ? (
           <p className="line-clamp-2 text-sm text-muted">{course.description}</p>
-        ) : (
-          <p className="text-sm text-muted">
-            Structured batch with study materials, tests, and results — inspired by
-            modern coaching platforms.
-          </p>
-        )}
+        ) : null}
 
         <div className="flex flex-wrap gap-2">
           <Badge>
             <span className="inline-flex items-center gap-1">
               <BookOpen className="h-3 w-3" />
-              {course._count.materials} materials
+              {course._count.materials}
             </span>
           </Badge>
           <Badge>
             <span className="inline-flex items-center gap-1">
               <ClipboardList className="h-3 w-3" />
-              {course._count.tests} tests
+              {course._count.tests}
             </span>
           </Badge>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
           <Link
-            href="/student/materials"
+            href={`/student/materials?course=${course.id}`}
             className="rounded-xl px-3 py-2.5 text-center text-xs font-semibold text-white transition-opacity hover:opacity-90"
             style={{ backgroundColor: course.themeColor }}
           >
-            Study materials
+            Materials
           </Link>
           <Link
-            href="/student/tests"
+            href={`/student/tests?course=${course.id}`}
             className="rounded-xl border border-border bg-slate-50 px-3 py-2.5 text-center text-xs font-semibold text-foreground transition-colors hover:bg-slate-100"
           >
-            Take tests
+            Tests
           </Link>
         </div>
 
         {course.enrolledAt ? (
-          <p className="flex items-center gap-1.5 text-xs text-muted">
-            <GraduationCap className="h-3.5 w-3.5" />
+          <p className="text-xs text-muted">
             Enrolled {new Date(course.enrolledAt).toLocaleDateString()}
           </p>
         ) : null}

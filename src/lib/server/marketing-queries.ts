@@ -18,6 +18,40 @@ export async function getPublishedCourses() {
   });
 }
 
+export async function getPublishedCourseById(id: string) {
+  return db.course.findFirst({
+    where: { id, published: true },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      price: true,
+      duration: true,
+      orderDetails: true,
+      themeColor: true,
+      imageFileName: true,
+      imageMimeType: true,
+    },
+  });
+}
+
+export async function getPublishedBookById(id: string) {
+  return db.book.findFirst({
+    where: { id, published: true },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      author: true,
+      price: true,
+      inStock: true,
+      orderDetails: true,
+      coverFileName: true,
+      coverMimeType: true,
+    },
+  });
+}
+
 export async function getPublishedBooks() {
   return db.book.findMany({
     where: { published: true },

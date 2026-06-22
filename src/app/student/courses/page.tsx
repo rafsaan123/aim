@@ -8,11 +8,11 @@ export default async function StudentCoursesPage() {
   const courses = toPlain(await getStudentCourses());
 
   return (
-    <MobileShell title="My Courses" subtitle="Your enrolled batches & programs">
+    <MobileShell title="My Courses">
       {courses.length === 0 ? (
         <EmptyState
-          title="No courses enrolled"
-          description="Ask your administrator to enroll you in a course."
+          title="No courses"
+          description="Contact your administrator to get enrolled."
         />
       ) : (
         <div className="space-y-4">

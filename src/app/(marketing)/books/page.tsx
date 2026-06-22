@@ -1,7 +1,6 @@
-import Link from "next/link";
+import { PageLink } from "@/components/public/PageLink";
 import { BookOpen } from "lucide-react";
 import { formatPriceBdt } from "@/lib/catalog";
-import { ContactOrderButton } from "@/components/public/ContactOrderButton";
 import { Badge } from "@/components/ui";
 import { site } from "@/lib/marketing-content";
 import { getPublishedBooks, hasBookCover } from "@/lib/server/marketing-queries";
@@ -10,6 +9,11 @@ export const metadata = {
   title: "বই | AIM Survey Engineering Coaching",
   description: "সার্ভে ইঞ্জিনিয়ারিং প্রস্তুতির বই ও PDF রিসোর্স।",
 };
+
+function excerpt(text: string, max = 100) {
+  if (text.length <= max) return text;
+  return `${text.slice(0, max).trim()}…`;
+}
 
 export default async function BooksPage() {
   const books = await getPublishedBooks();
@@ -32,9 +36,10 @@ export default async function BooksPage() {
             <p className="text-muted sm:col-span-2">শীঘ্রই নতুন বই যোগ করা হবে।</p>
           ) : (
             books.map((book) => (
-              <article
+              <PageLink
                 key={book.id}
-                className="flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-sm"
+                href={`/books/${book.id}`}
+                className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="flex gap-4 p-6 pb-0">
                   {hasBookCover(book) ? (
@@ -50,7 +55,7 @@ export default async function BooksPage() {
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-lg font-bold">{book.title}</p>
+                      <p className="text-lg font-bold group-hover:text-primary">{book.title}</p>
                       {!book.inStock ? <Badge tone="danger">স্টক আউট</Badge> : null}
                     </div>
                     {book.author ? (
@@ -63,29 +68,24 @@ export default async function BooksPage() {
                 </div>
                 <div className="flex flex-1 flex-col p-6 pt-4">
                   {book.description ? (
-                    <p className="mb-4 flex-1 text-sm leading-relaxed text-muted">
-                      {book.description}
+                    <p className="flex-1 text-sm leading-relaxed text-muted">
+                      {excerpt(book.description)}
                     </p>
                   ) : null}
-                  {book.orderDetails ? (
-                    <p className="mb-4 rounded-lg bg-slate-50 p-3 text-xs text-muted">
-                      {book.orderDetails}
-                    </p>
-                  ) : null}
-                  <ContactOrderButton outOfStock={!book.inStock} />
+                  <p className="mt-4 text-sm font-semibold text-primary">বিস্তারিত দেখুন →</p>
                 </div>
-              </article>
+              </PageLink>
             ))
           )}
         </div>
 
         <div className="mx-auto mt-10 max-w-6xl px-4 text-center sm:px-6">
-          <Link
+          <PageLink
             href={site.loginPath}
             className="text-sm font-semibold text-primary hover:underline"
           >
             ভর্তিকৃত শিক্ষার্থী পোর্টাল →
-          </Link>
+          </PageLink>
         </div>
       </section>
     </>

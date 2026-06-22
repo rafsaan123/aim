@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { PageLink } from "@/components/public/PageLink";
 import { navLinks, site } from "@/lib/marketing-content";
 
 export function PublicFooter() {
@@ -18,15 +18,15 @@ export function PublicFooter() {
           <ul className="mt-4 space-y-2 text-sm">
             {navLinks.map((link) => (
               <li key={link.href}>
-                <Link href={link.href} className="transition hover:text-white">
+                <PageLink href={link.href} className="transition hover:text-white">
                   {link.label}
-                </Link>
+                </PageLink>
               </li>
             ))}
             <li>
-              <Link href={site.loginPath} className="transition hover:text-white">
+              <PageLink href={site.loginPath} className="transition hover:text-white">
                 শিক্ষার্থী পোর্টাল
-              </Link>
+              </PageLink>
             </li>
           </ul>
         </div>

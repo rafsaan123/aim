@@ -95,15 +95,15 @@ export function WrittenTestPage({ testId }: { testId: string }) {
 
   if (loading) {
     return (
-      <MobileShell title="Loading..." showNav={false}>
-        <p className="text-center text-sm text-muted">Loading test...</p>
+      <MobileShell title="Loading" showNav={false} backHref="/student/tests">
+        <p className="text-center text-sm text-muted">Please wait...</p>
       </MobileShell>
     );
   }
 
   if (!test) {
     return (
-      <MobileShell title="Test unavailable" showNav={false}>
+      <MobileShell title="Unavailable" showNav={false} backHref="/student/tests">
         <p className="text-center text-sm text-danger">{error || "Not found"}</p>
         <Button className="mt-4" fullWidth onClick={() => router.push("/student/tests")}>
           Back
@@ -114,12 +114,14 @@ export function WrittenTestPage({ testId }: { testId: string }) {
 
   if (submitted) {
     return (
-      <MobileShell title={test.title} subtitle="Written test" showNav={false}>
+      <MobileShell
+        title={test.title}
+        subtitle={test.course.title}
+        showNav={false}
+        backHref="/student/tests"
+      >
         <Card>
-          <p className="text-sm text-success">
-            You have already submitted this written test. Results will appear
-            after admin grading.
-          </p>
+          <p className="text-sm text-success">Submitted. Results appear after grading.</p>
         </Card>
         <Button className="mt-4" fullWidth onClick={() => router.push("/student/results")}>
           View results
@@ -131,8 +133,9 @@ export function WrittenTestPage({ testId }: { testId: string }) {
   return (
     <MobileShell
       title={test.title}
-      subtitle={`${test.course.title} · Written test`}
+      subtitle={test.course.title}
       showNav={false}
+      backHref="/student/tests"
     >
       <div className="mb-4 grid grid-cols-2 gap-2 rounded-xl bg-white p-1 shadow-sm">
         <button

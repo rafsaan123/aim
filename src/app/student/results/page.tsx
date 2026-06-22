@@ -7,7 +7,7 @@ export default async function StudentResultsPage() {
   const results = toPlain(await getStudentResults());
 
   return (
-    <MobileShell title="Results" subtitle="Your scores and class scoreboards">
+    <MobileShell title="Results">
       <StudentResultsPanel results={results} />
     </MobileShell>
   );

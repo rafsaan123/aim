@@ -14,6 +14,8 @@ const PUBLIC_PATHS = new Set([
 
 function isPublicPath(pathname: string) {
   if (PUBLIC_PATHS.has(pathname)) return true;
+  if (pathname.startsWith("/courses/")) return true;
+  if (pathname.startsWith("/books/")) return true;
   if (pathname.startsWith("/api/auth/login")) return true;
   if (pathname.startsWith("/api/books/")) return true;
   if (pathname.startsWith("/api/success-stories/")) return true;

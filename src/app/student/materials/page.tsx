@@ -1,21 +1,36 @@
 import Link from "next/link";
 import { FileImage, FileText } from "lucide-react";
 import { MobileShell } from "@/components/mobile/MobileShell";
+import { CourseFilterBanner } from "@/components/student/CourseFilterBanner";
 import { Badge, Button, Card, EmptyState } from "@/components/ui";
 import { getStudentMaterials } from "@/lib/server/student-queries";
 
-export default async function StudentMaterialsPage() {
-  const materials = await getStudentMaterials();
+type Props = { searchParams: Promise<{ course?: string }> };
+
+export default async function StudentMaterialsPage({ searchParams }: Props) {
+  const { course: courseId } = await searchParams;
+  const allMaterials = await getStudentMaterials();
+  const materials = courseId
+    ? allMaterials.filter((m) => m.course.id === courseId)
+    : allMaterials;
+  const filterTitle = courseId
+    ? allMaterials.find((m) => m.course.id === courseId)?.course.title
+    : null;
 
   return (
-    <MobileShell
-      title="Study Materials"
-      subtitle="PDFs and images with your account watermark"
-    >
+    <MobileShell title="Materials">
+      {filterTitle ? (
+        <CourseFilterBanner courseTitle={filterTitle} clearHref="/student/materials" />
+      ) : null}
+
       {materials.length === 0 ? (
         <EmptyState
-          title="No materials yet"
-          description="Study materials will appear here once your admin uploads PDFs or images."
+          title="No materials"
+          description={
+            courseId
+              ? "No materials for this course yet."
+              : "Materials will appear here when available."
+          }
         />
       ) : (
         <div className="space-y-3">
@@ -30,13 +45,12 @@ export default async function StudentMaterialsPage() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <Badge>{material.course.title}</Badge>
-                  <h3 className="mt-2 font-semibold">{material.title}</h3>
-                  <p className="mt-1 truncate text-xs text-muted">
-                    {material.fileName}
-                  </p>
+                  {!courseId ? <Badge>{material.course.title}</Badge> : null}
+                  <h3 className={`font-semibold ${!courseId ? "mt-2" : ""}`}>
+                    {material.title}
+                  </h3>
                   <Link href={`/student/materials/${material.id}`} className="mt-3 block">
-                    <Button fullWidth>Open viewer</Button>
+                    <Button fullWidth>Open</Button>
                   </Link>
                 </div>
               </div>

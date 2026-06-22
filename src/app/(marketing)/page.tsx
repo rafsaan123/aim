@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import { PageLink } from "@/components/public/PageLink";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { getCourseTheme } from "@/lib/course-themes";
 import { formatPriceBdt } from "@/lib/catalog";
@@ -39,19 +39,19 @@ export default async function HomePage() {
               গাইডলাইন — সব এক জায়গায়।
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link
+              <PageLink
                 href="/courses"
                 className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
               >
                 কোর্স দেখুন
                 <ArrowRight size={16} />
-              </Link>
-              <Link
+              </PageLink>
+              <PageLink
                 href={site.loginPath}
                 className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/15"
               >
                 পোর্টালে লগইন
-              </Link>
+              </PageLink>
             </div>
           </div>
 
@@ -116,29 +116,32 @@ export default async function HomePage() {
               <h2 className="text-2xl font-bold sm:text-3xl">জনপ্রিয় কোর্স</h2>
               <p className="mt-2 text-muted">আপনার লক্ষ্য অনুযায়ী বেছে নিন</p>
             </div>
-            <Link href="/courses" className="text-sm font-semibold text-primary hover:underline">
+            <PageLink href="/courses" className="text-sm font-semibold text-primary hover:underline">
               সব কোর্স দেখুন →
-            </Link>
+            </PageLink>
           </div>
           <div className="mt-8 grid gap-5 md:grid-cols-2">
             {courses.slice(0, 2).map((course) => {
               const theme = getCourseTheme(course.themeColor);
               return (
-                <article
+                <PageLink
                   key={course.id}
-                  className="overflow-hidden rounded-2xl border border-border bg-white shadow-sm"
+                  href={`/courses/${course.id}`}
+                  className="group overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition hover:shadow-md"
                 >
                   <div className={`bg-gradient-to-r ${theme.gradient} px-6 py-4 text-white`}>
-                    <h3 className="text-lg font-bold">{course.title}</h3>
+                    <h3 className="text-lg font-bold group-hover:underline">{course.title}</h3>
                     <p className="mt-1 text-sm text-white/85">
                       {course.duration || ""}
                       {course.price ? ` · ${formatPriceBdt(course.price)}` : ""}
                     </p>
                   </div>
                   {course.description ? (
-                    <p className="p-6 text-sm leading-relaxed text-muted">{course.description}</p>
+                    <p className="p-6 text-sm leading-relaxed text-muted line-clamp-3">
+                      {course.description}
+                    </p>
                   ) : null}
-                </article>
+                </PageLink>
               );
             })}
           </div>
@@ -177,12 +180,12 @@ export default async function HomePage() {
             ))}
           </div>
           <div className="mt-8 text-center">
-            <Link
+            <PageLink
               href="/success-story"
               className="inline-flex items-center gap-2 text-sm font-semibold text-amber-300 hover:text-amber-200"
             >
               আরও গল্প পড়ুন <ArrowRight size={16} />
-            </Link>
+            </PageLink>
           </div>
         </div>
       </section>
@@ -208,18 +211,18 @@ export default async function HomePage() {
                 </ul>
               </div>
               <div className="flex flex-wrap gap-3 lg:justify-end">
-                <Link
+                <PageLink
                   href="/contact"
                   className="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-primary transition hover:bg-blue-50"
                 >
                   যোগাযোগ করুন
-                </Link>
-                <Link
+                </PageLink>
+                <PageLink
                   href="/books"
                   className="rounded-xl border border-white/30 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
                 >
                   বই দেখুন
-                </Link>
+                </PageLink>
               </div>
             </div>
           </div>

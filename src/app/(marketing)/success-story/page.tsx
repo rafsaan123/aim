@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { PageLink } from "@/components/public/PageLink";
 import { Quote } from "lucide-react";
 import { site } from "@/lib/marketing-content";
 import {
@@ -64,12 +64,12 @@ export default async function SuccessStoryPage() {
         </div>
 
         <div className="mx-auto mt-12 max-w-2xl px-4 text-center sm:px-6">
-          <Link
+          <PageLink
             href="/contact"
             className="inline-block rounded-xl bg-orange-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
           >
             যোগাযোগ করুন
-          </Link>
+          </PageLink>
         </div>
       </section>
     </>

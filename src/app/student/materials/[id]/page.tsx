@@ -97,11 +97,10 @@ export default function MaterialViewerPage({
 
   return (
     <MobileShell
-      title={material?.title || "Study Material"}
-      subtitle={
-        material ? `${material.course.title} · Watermarked copy` : undefined
-      }
+      title={material?.title || "Material"}
+      subtitle={material?.course.title}
       showNav={false}
+      backHref="/student/materials"
     >
       {loading ? (
         <p className="text-center text-sm text-muted">Opening viewer...</p>
@@ -114,9 +113,8 @@ export default function MaterialViewerPage({
         </div>
       ) : (
         <SecureViewerShell>
-          <div className="mb-4 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs text-indigo-800">
-            Content is watermarked with your name and email. Downloads include
-            the same watermark embedded in the file.
+          <div className="mb-4 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs text-indigo-800">
+            Watermarked with your account details.
           </div>
 
           {material.description ? (
@@ -138,7 +136,7 @@ export default function MaterialViewerPage({
             disabled={downloading}
           >
             <Download className="h-4 w-4" />
-            {downloading ? "Preparing download..." : "Download watermarked copy"}
+            {downloading ? "Preparing..." : "Download"}
           </Button>
 
           <Button
@@ -147,7 +145,7 @@ export default function MaterialViewerPage({
             className="mt-3"
             onClick={() => router.push("/student/materials")}
           >
-            Close viewer
+            Close
           </Button>
         </SecureViewerShell>
       )}

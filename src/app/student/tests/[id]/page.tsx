@@ -146,15 +146,15 @@ export default function TakeTestPage({
 
   if (loading || mode === "loading") {
     return (
-      <MobileShell title="Loading..." showNav={false}>
-        <p className="text-center text-sm text-muted">Starting test...</p>
+      <MobileShell title="Loading" showNav={false} backHref="/student/tests">
+        <p className="text-center text-sm text-muted">Please wait...</p>
       </MobileShell>
     );
   }
 
   if (!test) {
     return (
-      <MobileShell title="Test unavailable" showNav={false}>
+      <MobileShell title="Unavailable" showNav={false} backHref="/student/tests">
         <p className="mb-4 text-center text-sm text-danger">
           {error || "Test not found"}
         </p>
@@ -168,12 +168,9 @@ export default function TakeTestPage({
   return (
     <MobileShell
       title={test.title}
-      subtitle={
-        test.durationMinutes
-          ? `${test.course.title} · Online · ${test.durationMinutes} min`
-          : `${test.course.title} · Online test`
-      }
+      subtitle={test.course.title}
       showNav={false}
+      backHref="/student/tests"
     >
       <TestTimer expiresAt={expiresAt} onExpire={handleExpire} />
 

@@ -76,10 +76,10 @@ export default function LoginPage() {
             AIM Engineering Job Coaching
           </h1>
           <p className="mt-2 text-sm font-semibold text-amber-300">
-            Learn for Built to Future
+            Built to Future
           </p>
           <p className="mt-3 text-sm text-blue-100/80">
-            Sign in to access courses, materials, and tests
+            Sign in to your student portal
           </p>
         </div>
 
@@ -117,10 +117,6 @@ export default function LoginPage() {
             {loading ? "Signing in..." : "Sign in"}
           </Button>
         </form>
-
-        <p className="mt-6 text-center text-xs text-blue-100/60">
-          Demo: admin@aim.com / admin123 · student@aim.com / student123
-        </p>
       </div>
     </div>
   );
