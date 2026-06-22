@@ -4,6 +4,7 @@ import {
   detectFileType,
   isAllowedMaterialFile,
   MAX_FILE_BYTES,
+  materialListSelect,
   requireAdminSession,
 } from "@/lib/materials";
 import { db } from "@/lib/db";
@@ -18,16 +19,7 @@ export async function GET(request: Request) {
 
   const materials = await db.studyMaterial.findMany({
     where: courseId ? { courseId } : undefined,
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      fileName: true,
-      fileType: true,
-      mimeType: true,
-      createdAt: true,
-      course: { select: { id: true, title: true } },
-    },
+    select: materialListSelect,
     orderBy: { createdAt: "desc" },
   });
 

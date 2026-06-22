@@ -2,13 +2,11 @@ import Link from "next/link";
 import { AdminShell } from "@/components/mobile/AdminShell";
 import { Card } from "@/components/ui";
 import { db } from "@/lib/db";
-import { requireSession } from "@/lib/auth";
-import { redirect } from "next/navigation";
-import { Role, AttemptStatus } from "@/generated/prisma/client";
+import { AttemptStatus, Role } from "@/generated/prisma/client";
+import { requireAdminPage } from "@/lib/server/page-auth";
 
 export default async function AdminDashboardPage() {
-  const session = await requireSession(Role.ADMIN);
-  if (!session) redirect("/login");
+  const session = await requireAdminPage();
 
   const [students, courses, materials, tests, pendingGrading] =
     await Promise.all([

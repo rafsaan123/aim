@@ -1,39 +1,18 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { FileImage, FileText } from "lucide-react";
 import { MobileShell } from "@/components/mobile/MobileShell";
 import { Badge, Button, Card, EmptyState } from "@/components/ui";
-import { FileImage, FileText } from "lucide-react";
+import { getStudentMaterials } from "@/lib/server/student-queries";
 
-type Material = {
-  id: string;
-  title: string;
-  fileName: string;
-  fileType: "PDF" | "IMAGE";
-  createdAt: string;
-  course: { id: string; title: string };
-};
-
-export default function StudentMaterialsPage() {
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/student/materials")
-      .then((r) => r.json())
-      .then((d) => setMaterials(d.materials || []))
-      .finally(() => setLoading(false));
-  }, []);
+export default async function StudentMaterialsPage() {
+  const materials = await getStudentMaterials();
 
   return (
     <MobileShell
       title="Study Materials"
       subtitle="PDFs and images with your account watermark"
     >
-      {loading ? (
-        <p className="text-center text-sm text-muted">Loading materials...</p>
-      ) : materials.length === 0 ? (
+      {materials.length === 0 ? (
         <EmptyState
           title="No materials yet"
           description="Study materials will appear here once your admin uploads PDFs or images."

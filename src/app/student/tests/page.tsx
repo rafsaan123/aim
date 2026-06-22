@@ -1,42 +1,15 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { Clock } from "lucide-react";
 import { MobileShell } from "@/components/mobile/MobileShell";
 import { Badge, Button, Card, EmptyState } from "@/components/ui";
-import { Clock } from "lucide-react";
+import { getStudentTests } from "@/lib/server/student-queries";
 
-type TestItem = {
-  id: string;
-  title: string;
-  description: string | null;
-  format: "ONLINE" | "WRITTEN";
-  durationMinutes: number | null;
-  course: { id: string; title: string };
-  _count: { questions: number };
-  attempts: {
-    status: string;
-    obtainedMarks: number | null;
-    totalMarks: number | null;
-  }[];
-};
-
-export default function StudentTestsPage() {
-  const [tests, setTests] = useState<TestItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/student/tests")
-      .then((r) => r.json())
-      .then((d) => setTests(d.tests || []))
-      .finally(() => setLoading(false));
-  }, []);
+export default async function StudentTestsPage() {
+  const tests = await getStudentTests();
 
   return (
     <MobileShell title="Tests" subtitle="Online and written tests for your courses">
-      {loading ? (
-        <p className="text-center text-sm text-muted">Loading tests...</p>
-      ) : tests.length === 0 ? (
+      {tests.length === 0 ? (
         <EmptyState
           title="No tests available"
           description="Tests will show up here when your admin creates them for your courses."

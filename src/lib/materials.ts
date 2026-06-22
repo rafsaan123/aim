@@ -18,6 +18,17 @@ const ALLOWED_TYPES: Record<
 
 export const MAX_FILE_BYTES = 4 * 1024 * 1024;
 
+export const materialListSelect = {
+  id: true,
+  title: true,
+  description: true,
+  fileName: true,
+  fileType: true,
+  mimeType: true,
+  createdAt: true,
+  course: { select: { id: true, title: true } },
+} as const;
+
 export function detectFileType(
   mimeType: string,
   fileName: string

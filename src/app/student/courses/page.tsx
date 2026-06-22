@@ -1,26 +1,15 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import { MobileShell } from "@/components/mobile/MobileShell";
-import { CourseCard, type CourseCardData } from "@/components/courses/CourseCard";
+import { CourseCard } from "@/components/courses/CourseCard";
 import { EmptyState } from "@/components/ui";
+import { getStudentCourses } from "@/lib/server/student-queries";
+import { toPlain } from "@/lib/server/serialize";
 
-export default function StudentCoursesPage() {
-  const [courses, setCourses] = useState<CourseCardData[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/student/courses")
-      .then((r) => r.json())
-      .then((d) => setCourses(d.courses || []))
-      .finally(() => setLoading(false));
-  }, []);
+export default async function StudentCoursesPage() {
+  const courses = toPlain(await getStudentCourses());
 
   return (
     <MobileShell title="My Courses" subtitle="Your enrolled batches & programs">
-      {loading ? (
-        <p className="text-center text-sm text-muted">Loading courses...</p>
-      ) : courses.length === 0 ? (
+      {courses.length === 0 ? (
         <EmptyState
           title="No courses enrolled"
           description="Ask your administrator to enroll you in a course."

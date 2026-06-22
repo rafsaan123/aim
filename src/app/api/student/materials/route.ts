@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   canStudentAccessMaterial,
+  materialListSelect,
   requireStudentSession,
 } from "@/lib/materials";
 import { db } from "@/lib/db";
@@ -20,16 +21,7 @@ export async function GET() {
 
   const materials = await db.studyMaterial.findMany({
     where: { courseId: { in: courseIds } },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      fileName: true,
-      fileType: true,
-      mimeType: true,
-      createdAt: true,
-      course: { select: { id: true, title: true } },
-    },
+    select: materialListSelect,
     orderBy: { createdAt: "desc" },
   });
 
