@@ -1,3 +1,4 @@
+import { Role } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { appUrl, ctaButton, emailLayout, escapeHtml, sendEmail } from "@/lib/email";
 
@@ -14,7 +15,7 @@ type NotifyResult = {
 
 async function getEnrolledStudents(courseId: string): Promise<StudentRecipient[]> {
   const enrollments = await db.enrollment.findMany({
-    where: { courseId },
+    where: { courseId, user: { role: Role.STUDENT } },
     select: {
       user: { select: { name: true, email: true } },
     },

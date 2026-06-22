@@ -60,21 +60,6 @@ export function appUrl(path: string) {
   return `${APP_URL.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-export async function verifyEmailConfig() {
-  const mailer = getTransporter();
-  if (!mailer) {
-    return { ok: false as const, error: "SMTP_USER or SMTP_PASS is not set" };
-  }
-
-  try {
-    await mailer.verify();
-    return { ok: true as const };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return { ok: false as const, error: message };
-  }
-}
-
 export async function sendEmail({ to, subject, html, text }: SendEmailInput) {
   const mailer = getTransporter();
   if (!mailer) {
