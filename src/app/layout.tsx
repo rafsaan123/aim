@@ -13,8 +13,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AIM Coaching",
-  description: "Student and admin dashboard for AIM coaching center",
+  title: "AIM Engineering Job Coaching",
+  description: "Learn for Built to Future — student and admin portal for AIM Engineering Job Coaching.",
+  icons: {
+    icon: "/brand/aim-logo.png",
+    apple: "/brand/aim-logo.png",
+  },
 };
 
 export const viewport: Viewport = {

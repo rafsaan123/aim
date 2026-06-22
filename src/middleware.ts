@@ -3,12 +3,21 @@ import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { JWT_SECRET, SESSION_COOKIE } from "@/lib/session-config";
 
+const PUBLIC_PATHS = new Set([
+  "/",
+  "/courses",
+  "/books",
+  "/success-story",
+  "/contact",
+  "/login",
+]);
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(SESSION_COOKIE)?.value;
 
   const isPublic =
-    pathname === "/login" ||
+    PUBLIC_PATHS.has(pathname) ||
     pathname.startsWith("/api/auth/login") ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon");
@@ -42,12 +51,6 @@ export async function middleware(request: NextRequest) {
 
     if (pathname.startsWith("/student") && role !== "STUDENT") {
       return NextResponse.redirect(new URL("/admin", request.url));
-    }
-
-    if (pathname === "/") {
-      return NextResponse.redirect(
-        new URL(role === "ADMIN" ? "/admin" : "/student/materials", request.url)
-      );
     }
 
     return NextResponse.next();
