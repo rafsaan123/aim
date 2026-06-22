@@ -93,13 +93,17 @@ export async function POST(request: Request) {
     },
   });
 
-  notifyNewTest({
-    courseId: test.course.id,
-    courseTitle: test.course.title,
-    testTitle: test.title,
-    testFormat: test.format,
-    durationMinutes: test.durationMinutes,
-  });
+  try {
+    await notifyNewTest({
+      courseId: test.course.id,
+      courseTitle: test.course.title,
+      testTitle: test.title,
+      testFormat: test.format,
+      durationMinutes: test.durationMinutes,
+    });
+  } catch (err) {
+    console.error("[email] notifyNewTest failed:", err);
+  }
 
   return NextResponse.json({ test }, { status: 201 });
 }

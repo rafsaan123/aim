@@ -92,11 +92,15 @@ export async function POST(request: Request) {
     },
   });
 
-  notifyNewMaterial({
-    courseId: material.course.id,
-    courseTitle: material.course.title,
-    materialTitle: material.title,
-  });
+  try {
+    await notifyNewMaterial({
+      courseId: material.course.id,
+      courseTitle: material.course.title,
+      materialTitle: material.title,
+    });
+  } catch (err) {
+    console.error("[email] notifyNewMaterial failed:", err);
+  }
 
   return NextResponse.json({ material }, { status: 201 });
 }

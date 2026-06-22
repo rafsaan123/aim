@@ -26,8 +26,9 @@ function getTransporter() {
     return transporter;
   }
 
+  // Hostinger Professional Email uses Titan — smtp.titan.email if smtp.hostinger.com fails.
   const host = process.env.SMTP_HOST || "smtp.hostinger.com";
-  const port = Number(process.env.SMTP_PORT || "465");
+  const port = Number(process.env.SMTP_PORT || "587");
   const secure =
     process.env.SMTP_SECURE !== undefined
       ? process.env.SMTP_SECURE === "true"
@@ -38,6 +39,10 @@ function getTransporter() {
     port,
     secure,
     auth: { user, pass },
+    tls: { minVersion: "TLSv1.2" },
+    connectionTimeout: 15_000,
+    greetingTimeout: 15_000,
+    socketTimeout: 30_000,
   });
 
   return transporter;
@@ -55,6 +60,21 @@ export function appUrl(path: string) {
   return `${APP_URL.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+export async function verifyEmailConfig() {
+  const mailer = getTransporter();
+  if (!mailer) {
+    return { ok: false as const, error: "SMTP_USER or SMTP_PASS is not set" };
+  }
+
+  try {
+    await mailer.verify();
+    return { ok: true as const };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return { ok: false as const, error: message };
+  }
+}
+
 export async function sendEmail({ to, subject, html, text }: SendEmailInput) {
   const mailer = getTransporter();
   if (!mailer) {
@@ -62,7 +82,7 @@ export async function sendEmail({ to, subject, html, text }: SendEmailInput) {
     return false;
   }
 
-  await mailer.sendMail({
+  const info = await mailer.sendMail({
     from: EMAIL_FROM,
     to,
     subject,
@@ -70,6 +90,7 @@ export async function sendEmail({ to, subject, html, text }: SendEmailInput) {
     text,
   });
 
+  console.info("[email] sent to", to, "messageId:", info.messageId);
   return true;
 }
 

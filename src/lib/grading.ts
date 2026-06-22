@@ -90,14 +90,18 @@ export async function autoGradeMcqAnswers(attemptId: string) {
   });
 
   if (!wasGraded && status === AttemptStatus.GRADED) {
-    notifyResultPublished({
-      studentName: attempt.user.name,
-      studentEmail: attempt.user.email,
-      courseTitle: attempt.test.course.title,
-      testTitle: attempt.test.title,
-      obtainedMarks,
-      totalMarks,
-    });
+    try {
+      await notifyResultPublished({
+        studentName: attempt.user.name,
+        studentEmail: attempt.user.email,
+        courseTitle: attempt.test.course.title,
+        testTitle: attempt.test.title,
+        obtainedMarks,
+        totalMarks,
+      });
+    } catch (err) {
+      console.error("[email] notifyResultPublished failed:", err);
+    }
   }
 
   return updated;
