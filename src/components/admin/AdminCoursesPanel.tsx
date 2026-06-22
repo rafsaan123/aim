@@ -9,6 +9,10 @@ type Course = {
   id: string;
   title: string;
   description: string | null;
+  price: number | null;
+  duration: string | null;
+  orderDetails: string | null;
+  published: boolean;
   themeColor: string;
   hasImage: boolean;
   _count: { enrollments: number; materials: number; tests: number };
@@ -20,6 +24,10 @@ export function AdminCoursesPanel({ courses }: { courses: Course[] }) {
   const [newCourseDesc, setNewCourseDesc] = useState("");
   const [newCourseTheme, setNewCourseTheme] = useState("#1d4ed8");
   const [newCourseImage, setNewCourseImage] = useState<File | null>(null);
+  const [newCoursePrice, setNewCoursePrice] = useState("");
+  const [newCourseDuration, setNewCourseDuration] = useState("");
+  const [newCourseOrderDetails, setNewCourseOrderDetails] = useState("");
+  const [newCoursePublished, setNewCoursePublished] = useState(true);
   const [newCoursePreview, setNewCoursePreview] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -41,6 +49,10 @@ export function AdminCoursesPanel({ courses }: { courses: Course[] }) {
     formData.append("title", newCourseTitle);
     formData.append("description", newCourseDesc);
     formData.append("themeColor", newCourseTheme);
+    if (newCoursePrice) formData.append("price", newCoursePrice);
+    if (newCourseDuration) formData.append("duration", newCourseDuration);
+    if (newCourseOrderDetails) formData.append("orderDetails", newCourseOrderDetails);
+    formData.append("published", newCoursePublished ? "true" : "false");
     if (newCourseImage) formData.append("image", newCourseImage);
 
     const res = await fetch("/api/admin/courses", {
@@ -57,6 +69,10 @@ export function AdminCoursesPanel({ courses }: { courses: Course[] }) {
     setNewCourseTitle("");
     setNewCourseDesc("");
     setNewCourseTheme("#1d4ed8");
+    setNewCoursePrice("");
+    setNewCourseDuration("");
+    setNewCourseOrderDetails("");
+    setNewCoursePublished(true);
     onNewCourseImageChange(null);
     setMessage("Course created");
     router.refresh();
@@ -85,6 +101,19 @@ export function AdminCoursesPanel({ courses }: { courses: Course[] }) {
       setError(data.error || "Failed to update cover");
     }
     setUploadingId(null);
+  }
+
+  async function updateCourseMeta(
+    course: Course,
+    fields: Partial<Pick<Course, "price" | "duration" | "orderDetails" | "published">>
+  ) {
+    const formData = new FormData();
+    if (fields.price !== undefined) formData.append("price", String(fields.price ?? ""));
+    if (fields.duration !== undefined) formData.append("duration", fields.duration || "");
+    if (fields.orderDetails !== undefined) formData.append("orderDetails", fields.orderDetails || "");
+    if (fields.published !== undefined) formData.append("published", fields.published ? "true" : "false");
+    await fetch(`/api/admin/courses/${course.id}`, { method: "PATCH", body: formData });
+    router.refresh();
   }
 
   async function updateCourseTheme(course: Course, themeColor: string) {
@@ -142,10 +171,44 @@ export function AdminCoursesPanel({ courses }: { courses: Course[] }) {
             <Textarea
               value={newCourseDesc}
               onChange={(e) => setNewCourseDesc(e.target.value)}
-              placeholder="Live classes, materials, tests, and more..."
+              placeholder="Survey engineering course details..."
               rows={2}
             />
           </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Price (BDT)">
+              <Input
+                type="number"
+                min={0}
+                value={newCoursePrice}
+                onChange={(e) => setNewCoursePrice(e.target.value)}
+                placeholder="5000"
+              />
+            </Field>
+            <Field label="Duration">
+              <Input
+                value={newCourseDuration}
+                onChange={(e) => setNewCourseDuration(e.target.value)}
+                placeholder="3 months"
+              />
+            </Field>
+          </div>
+          <Field label="Order / enrollment instructions">
+            <Textarea
+              value={newCourseOrderDetails}
+              onChange={(e) => setNewCourseOrderDetails(e.target.value)}
+              rows={2}
+              placeholder="Payment method, contact info..."
+            />
+          </Field>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={newCoursePublished}
+              onChange={(e) => setNewCoursePublished(e.target.checked)}
+            />
+            Show on public website
+          </label>
           <Field label="Theme color">
             <ThemeSwatches value={newCourseTheme} onChange={setNewCourseTheme} />
           </Field>
@@ -206,6 +269,8 @@ export function AdminCoursesPanel({ courses }: { courses: Course[] }) {
                   <p className="text-xs text-muted">
                     {course._count.enrollments} students · {course._count.materials}{" "}
                     materials · {course._count.tests} tests
+                    {course.price != null ? ` · ৳${course.price}` : ""}
+                    {!course.published ? " · Hidden" : ""}
                   </p>
                 </div>
                 <Button
@@ -223,6 +288,7 @@ export function AdminCoursesPanel({ courses }: { courses: Course[] }) {
                   onChange={(color) => updateCourseTheme(course, color)}
                 />
               </Field>
+              <CourseMetaForm course={course} onSave={updateCourseMeta} />
               <Field label="Update cover">
                 <Input
                   type="file"
@@ -240,5 +306,56 @@ export function AdminCoursesPanel({ courses }: { courses: Course[] }) {
         )}
       </div>
     </>
+  );
+}
+
+function CourseMetaForm({
+  course,
+  onSave,
+}: {
+  course: Course;
+  onSave: (
+    course: Course,
+    fields: Partial<Pick<Course, "price" | "duration" | "orderDetails" | "published">>
+  ) => Promise<void>;
+}) {
+  const [price, setPrice] = useState(course.price?.toString() || "");
+  const [duration, setDuration] = useState(course.duration || "");
+  const [orderDetails, setOrderDetails] = useState(course.orderDetails || "");
+  const [published, setPublished] = useState(course.published);
+
+  return (
+    <div className="grid gap-2 sm:grid-cols-2">
+      <Field label="Price (BDT)">
+        <Input value={price} onChange={(e) => setPrice(e.target.value)} type="number" min={0} />
+      </Field>
+      <Field label="Duration">
+        <Input value={duration} onChange={(e) => setDuration(e.target.value)} />
+      </Field>
+      <div className="sm:col-span-2">
+        <Field label="Order details">
+          <Textarea value={orderDetails} onChange={(e) => setOrderDetails(e.target.value)} rows={2} />
+        </Field>
+      </div>
+      <label className="flex items-center gap-2 text-sm sm:col-span-2">
+        <input type="checkbox" checked={published} onChange={(e) => setPublished(e.target.checked)} />
+        Published on website
+      </label>
+      <Button
+        type="button"
+        variant="secondary"
+        className="sm:col-span-2"
+        onClick={() =>
+          onSave(course, {
+            price: price ? Number(price) : null,
+            duration,
+            orderDetails,
+            published,
+          })
+        }
+      >
+        Save website details
+      </Button>
+    </div>
   );
 }

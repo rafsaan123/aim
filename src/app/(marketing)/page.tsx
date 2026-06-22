@@ -1,15 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { getCourseTheme } from "@/lib/course-themes";
+import { formatPriceBdt } from "@/lib/catalog";
+import { homeHighlights, site, stats } from "@/lib/marketing-content";
 import {
-  courses,
-  homeHighlights,
-  site,
-  stats,
-  successStories,
-} from "@/lib/marketing-content";
+  getPublishedCourses,
+  getPublishedSuccessStories,
+  hasStoryProfile,
+} from "@/lib/server/marketing-queries";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [courses, successStories] = await Promise.all([
+    getPublishedCourses(),
+    getPublishedSuccessStories(),
+  ]);
+
   return (
     <>
       <section className="relative overflow-hidden bg-[#0b1f3a] text-white">
@@ -26,11 +32,11 @@ export default function HomePage() {
               {site.tagline}
             </p>
             <h1 className="mt-5 text-3xl font-bold leading-tight sm:text-4xl lg:text-5xl">
-              ইঞ্জিনিয়ারিং চাকরির প্রস্তুতিতে আপনার বিশ্বস্ত সঙ্গী
+              সার্ভে ইঞ্জিনিয়ারিং চাকরির প্রস্তুতিতে আপনার বিশ্বস্ত সঙ্গী
             </h1>
             <p className="mt-5 text-base leading-relaxed text-blue-100/85 sm:text-lg">
               AIM Engineering Job Coaching-এ পাবেন কোর্স, বই, মক টেস্ট ও ব্যক্তিগত
-              গাইডলাইন — সব এক জায়গায়, বাংলায়।
+              গাইডলাইন — সব এক জায়গায়।
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
@@ -115,22 +121,26 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="mt-8 grid gap-5 md:grid-cols-2">
-            {courses.slice(0, 2).map((course) => (
-              <article
-                key={course.title}
-                className="overflow-hidden rounded-2xl border border-border bg-white shadow-sm"
-              >
-                <div className={`bg-gradient-to-r ${course.accent} px-6 py-4 text-white`}>
-                  <h3 className="text-lg font-bold">{course.title}</h3>
-                  <p className="mt-1 text-sm text-white/85">
-                    {course.duration} · {course.level}
-                  </p>
-                </div>
-                <p className="p-6 text-sm leading-relaxed text-muted">
-                  {course.description}
-                </p>
-              </article>
-            ))}
+            {courses.slice(0, 2).map((course) => {
+              const theme = getCourseTheme(course.themeColor);
+              return (
+                <article
+                  key={course.id}
+                  className="overflow-hidden rounded-2xl border border-border bg-white shadow-sm"
+                >
+                  <div className={`bg-gradient-to-r ${theme.gradient} px-6 py-4 text-white`}>
+                    <h3 className="text-lg font-bold">{course.title}</h3>
+                    <p className="mt-1 text-sm text-white/85">
+                      {course.duration || ""}
+                      {course.price ? ` · ${formatPriceBdt(course.price)}` : ""}
+                    </p>
+                  </div>
+                  {course.description ? (
+                    <p className="p-6 text-sm leading-relaxed text-muted">{course.description}</p>
+                  ) : null}
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -144,15 +154,24 @@ export default function HomePage() {
           <div className="mt-10 grid gap-5 md:grid-cols-2">
             {successStories.slice(0, 2).map((story) => (
               <blockquote
-                key={story.name}
+                key={story.id}
                 className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm"
               >
                 <p className="text-sm leading-relaxed text-blue-50/90">
                   &ldquo;{story.quote}&rdquo;
                 </p>
-                <footer className="mt-4 border-t border-white/10 pt-4">
-                  <p className="font-semibold">{story.name}</p>
-                  <p className="text-sm text-amber-300">{story.role}</p>
+                <footer className="mt-4 flex items-center gap-3 border-t border-white/10 pt-4">
+                  {hasStoryProfile(story) ? (
+                    <img
+                      src={`/api/success-stories/${story.id}/profile`}
+                      alt={story.name}
+                      className="h-10 w-10 rounded-full object-cover"
+                    />
+                  ) : null}
+                  <div>
+                    <p className="font-semibold">{story.name}</p>
+                    <p className="text-sm text-amber-300">{story.role}</p>
+                  </div>
                 </footer>
               </blockquote>
             ))}

@@ -12,15 +12,21 @@ const PUBLIC_PATHS = new Set([
   "/login",
 ]);
 
+function isPublicPath(pathname: string) {
+  if (PUBLIC_PATHS.has(pathname)) return true;
+  if (pathname.startsWith("/api/auth/login")) return true;
+  if (pathname.startsWith("/api/books/")) return true;
+  if (pathname.startsWith("/api/success-stories/")) return true;
+  if (pathname.startsWith("/api/courses/") && pathname.endsWith("/cover")) return true;
+  if (pathname.startsWith("/_next") || pathname.startsWith("/favicon")) return true;
+  return false;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(SESSION_COOKIE)?.value;
 
-  const isPublic =
-    PUBLIC_PATHS.has(pathname) ||
-    pathname.startsWith("/api/auth/login") ||
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon");
+  const isPublic = isPublicPath(pathname);
 
   if (isPublic) {
     if (pathname === "/login" && token) {

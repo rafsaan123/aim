@@ -12,6 +12,10 @@ function courseSummary(course: {
   id: string;
   title: string;
   description: string | null;
+  price: number | null;
+  duration: string | null;
+  orderDetails: string | null;
+  published: boolean;
   themeColor: string;
   imageFileName: string | null;
   imageMimeType: string | null;
@@ -22,6 +26,10 @@ function courseSummary(course: {
     id: course.id,
     title: course.title,
     description: course.description,
+    price: course.price,
+    duration: course.duration,
+    orderDetails: course.orderDetails,
+    published: course.published,
     themeColor: course.themeColor,
     hasImage: Boolean(course.imageMimeType && course.imageFileName),
     createdAt: course.createdAt,
@@ -63,6 +71,11 @@ export async function POST(request: Request) {
     const themeColor = formData.get("themeColor")?.toString();
     const image = formData.get("image");
 
+    const price = formData.get("price")?.toString();
+    const duration = formData.get("duration")?.toString();
+    const orderDetails = formData.get("orderDetails")?.toString();
+    const published = formData.get("published") !== "false";
+
     if (!title?.trim()) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
     }
@@ -96,6 +109,10 @@ export async function POST(request: Request) {
     const createData: Prisma.CourseCreateInput = {
       title: title.trim(),
       description: description?.trim() || null,
+      price: price ? Math.max(0, Math.floor(Number(price))) : null,
+      duration: duration?.trim() || null,
+      orderDetails: orderDetails?.trim() || null,
+      published,
       themeColor: validTheme,
       ...(imageData
         ? {

@@ -6,6 +6,10 @@ function courseSummary(course: {
   id: string;
   title: string;
   description: string | null;
+  price: number | null;
+  duration: string | null;
+  orderDetails: string | null;
+  published: boolean;
   themeColor: string;
   imageFileName: string | null;
   imageMimeType: string | null;
@@ -16,6 +20,10 @@ function courseSummary(course: {
     id: course.id,
     title: course.title,
     description: course.description,
+    price: course.price,
+    duration: course.duration,
+    orderDetails: course.orderDetails,
+    published: course.published,
     themeColor: course.themeColor,
     hasImage: Boolean(course.imageMimeType && course.imageFileName),
     createdAt: course.createdAt,
@@ -57,6 +65,18 @@ export async function getAdminUsersPageData() {
   ]);
 
   return { students, courses, enrollments, users };
+}
+
+export async function getAdminBooks() {
+  return db.book.findMany({
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+  });
+}
+
+export async function getAdminSuccessStories() {
+  return db.successStory.findMany({
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+  });
 }
 
 export async function getAdminCourses() {

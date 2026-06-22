@@ -1,5 +1,4 @@
-import type { ComponentProps } from "react";
-import { AdminShell } from "@/components/mobile/AdminShell";
+import { AdminPageHeader } from "@/components/admin/AdminLayoutShell";
 import { AdminGradingPanel } from "@/components/admin/AdminGradingPanel";
 import { getAdminGradingAttempts } from "@/lib/server/admin-queries";
 import { toPlain } from "@/lib/server/serialize";
@@ -8,8 +7,9 @@ export default async function AdminGradingPage() {
   const attempts = toPlain(await getAdminGradingAttempts());
 
   return (
-    <AdminShell title="Grade Tests">
+    <>
+      <AdminPageHeader title="Grading" description="Grade written answers and publish results." />
       <AdminGradingPanel attempts={attempts} />
-    </AdminShell>
+    </>
   );
 }

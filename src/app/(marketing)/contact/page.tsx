@@ -1,4 +1,4 @@
-import { Mail, MapPin } from "lucide-react";
+import { Mail, MapPin, Phone } from "lucide-react";
 import { ContactForm } from "@/components/public/ContactForm";
 import { site } from "@/lib/marketing-content";
 
@@ -23,6 +23,23 @@ export default function ContactPage() {
       <section className="bg-background py-14 sm:py-16">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-5">
           <div className="space-y-6 lg:col-span-2">
+            <div className="rounded-2xl border border-border bg-white p-6 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="rounded-xl bg-indigo-50 p-3 text-primary">
+                  <Phone size={22} />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">ফোন (অর্ডার)</p>
+                  <a
+                    href={`tel:${site.orderPhone.replace(/[^\d+]/g, "")}`}
+                    className="mt-1 block text-sm font-medium text-primary hover:underline"
+                  >
+                    {site.orderPhoneDisplay}
+                  </a>
+                </div>
+              </div>
+            </div>
+
             <div className="rounded-2xl border border-border bg-white p-6 shadow-sm">
               <div className="flex items-start gap-4">
                 <div className="rounded-xl bg-indigo-50 p-3 text-primary">

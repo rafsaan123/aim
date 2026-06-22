@@ -35,17 +35,51 @@ model User {
 }
 
 model Course {
-  id           String          @id @default(cuid())
-  title        String
-  description  String?
-  themeColor   String          @default("#1d4ed8")
-  imageData    Bytes?
+  id            String          @id @default(cuid())
+  title         String
+  description   String?
+  price         Int?
+  duration      String?
+  orderDetails  String?
+  published     Boolean         @default(true)
+  themeColor    String          @default("#1d4ed8")
+  imageData     Bytes?
   imageMimeType String?
   imageFileName String?
-  createdAt    DateTime        @default(now())
-  enrollments  Enrollment[]
-  materials    StudyMaterial[]
-  tests        Test[]
+  createdAt     DateTime        @default(now())
+  enrollments   Enrollment[]
+  materials     StudyMaterial[]
+  tests         Test[]
+}
+
+model Book {
+  id            String         @id @default(cuid())
+  title         String
+  description   String?
+  author        String?
+  price         Int            @default(0)
+  inStock       Boolean        @default(true)
+  orderDetails  String?
+  coverData     Bytes?
+  coverMimeType String?
+  coverFileName String?
+  published     Boolean        @default(true)
+  sortOrder     Int            @default(0)
+  createdAt     DateTime       @default(now())
+}
+
+model SuccessStory {
+  id              String   @id @default(cuid())
+  name            String
+  role            String
+  quote           String
+  batch           String?
+  profileData     Bytes?
+  profileMimeType String?
+  profileFileName String?
+  published       Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
 }
 
 model Enrollment {

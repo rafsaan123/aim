@@ -1,4 +1,4 @@
-import { AdminShell } from "@/components/mobile/AdminShell";
+import { AdminPageHeader } from "@/components/admin/AdminLayoutShell";
 import { AdminMaterialsPanel } from "@/components/admin/AdminMaterialsPanel";
 import { getAdminMaterialsPageData } from "@/lib/server/admin-queries";
 import { toPlain } from "@/lib/server/serialize";
@@ -7,8 +7,9 @@ export default async function AdminMaterialsPage() {
   const data = toPlain(await getAdminMaterialsPageData());
 
   return (
-    <AdminShell title="Study Materials">
+    <>
+      <AdminPageHeader title="Study Materials" description="PDFs and images for enrolled courses." />
       <AdminMaterialsPanel {...data} />
-    </AdminShell>
+    </>
   );
 }

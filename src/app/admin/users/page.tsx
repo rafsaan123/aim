@@ -1,4 +1,4 @@
-import { AdminShell } from "@/components/mobile/AdminShell";
+import { AdminPageHeader } from "@/components/admin/AdminLayoutShell";
 import { AdminUsersPanel } from "@/components/admin/AdminUsersPanel";
 import { getAdminUsersPageData } from "@/lib/server/admin-queries";
 import { toPlain } from "@/lib/server/serialize";
@@ -7,8 +7,9 @@ export default async function AdminUsersPage() {
   const data = toPlain(await getAdminUsersPageData());
 
   return (
-    <AdminShell title="User Manage">
+    <>
+      <AdminPageHeader title="Users" description="Student accounts and course enrollments." />
       <AdminUsersPanel {...data} />
-    </AdminShell>
+    </>
   );
 }

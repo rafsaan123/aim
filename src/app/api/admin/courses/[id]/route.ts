@@ -12,6 +12,10 @@ function courseSummary(course: {
   id: string;
   title: string;
   description: string | null;
+  price: number | null;
+  duration: string | null;
+  orderDetails: string | null;
+  published: boolean;
   themeColor: string;
   imageFileName: string | null;
   imageMimeType: string | null;
@@ -22,6 +26,10 @@ function courseSummary(course: {
     id: course.id,
     title: course.title,
     description: course.description,
+    price: course.price,
+    duration: course.duration,
+    orderDetails: course.orderDetails,
+    published: course.published,
     themeColor: course.themeColor,
     hasImage: Boolean(course.imageMimeType && course.imageFileName),
     createdAt: course.createdAt,
@@ -56,6 +64,19 @@ export async function PATCH(
   if (title?.trim()) data.title = title.trim();
   if (description !== undefined) {
     data.description = description.trim() || null;
+  }
+  if (formData.has("price")) {
+    const price = formData.get("price")?.toString();
+    data.price = price ? Math.max(0, Math.floor(Number(price))) : null;
+  }
+  if (formData.has("duration")) {
+    data.duration = formData.get("duration")?.toString()?.trim() || null;
+  }
+  if (formData.has("orderDetails")) {
+    data.orderDetails = formData.get("orderDetails")?.toString()?.trim() || null;
+  }
+  if (formData.has("published")) {
+    data.published = formData.get("published") !== "false";
   }
 
   if (themeColor) {
