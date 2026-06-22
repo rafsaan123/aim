@@ -25,7 +25,7 @@ export function WrittenTestPage({ testId }: { testId: string }) {
   const [test, setTest] = useState<WrittenTest | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [files, setFiles] = useState<Record<string, File | null>>({});
+  const [answerSheet, setAnswerSheet] = useState<File | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -48,14 +48,15 @@ export function WrittenTestPage({ testId }: { testId: string }) {
   async function handleSubmit() {
     if (!test) return;
 
-    for (const q of test.questions) {
-      const hasText = answers[q.id]?.trim();
-      const hasFile = files[q.id];
-      if (!hasText && !hasFile) {
-        setError("Each question needs a typed answer or a photo of your written work.");
-        setTab("submit");
-        return;
-      }
+    const hasPhoto = !!answerSheet;
+    const allTyped = test.questions.every((q) => answers[q.id]?.trim());
+
+    if (!hasPhoto && !allTyped) {
+      setError(
+        "Upload one photo of your written answer sheet, or type an answer for every question."
+      );
+      setTab("submit");
+      return;
     }
 
     setSubmitting(true);
@@ -72,10 +73,7 @@ export function WrittenTestPage({ testId }: { testId: string }) {
       )
     );
 
-    for (const q of test.questions) {
-      const file = files[q.id];
-      if (file) formData.append(`file_${q.id}`, file);
-    }
+    if (answerSheet) formData.append("answerSheet", answerSheet);
 
     const res = await fetch(`/api/student/tests/${testId}/written`, {
       method: "POST",
@@ -165,7 +163,8 @@ export function WrittenTestPage({ testId }: { testId: string }) {
         <div className="space-y-3">
           <Card className="border-indigo-200 bg-indigo-50 text-sm text-indigo-800">
             Read these questions and write your answers on paper. When ready,
-            go to <strong>Submit answers</strong> to type or photograph your work.
+            go to <strong>Submit answers</strong> to upload one photo of your
+            answer sheet and/or type your answers.
           </Card>
           {test.questions.map((q, index) => (
             <Card key={q.id}>
@@ -181,6 +180,26 @@ export function WrittenTestPage({ testId }: { testId: string }) {
         </div>
       ) : (
         <div className="space-y-4">
+          <Card className="space-y-3 border-indigo-200 bg-indigo-50">
+            <p className="text-xs font-semibold uppercase text-indigo-700">
+              Answer sheet photo
+            </p>
+            <p className="text-sm text-indigo-900">
+              Take one clear photo of your handwritten answers for all questions.
+              You can also type answers below instead.
+            </p>
+            <Field label="Photo of your answer sheet">
+              <Input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => setAnswerSheet(e.target.files?.[0] || null)}
+              />
+            </Field>
+            {answerSheet ? (
+              <p className="text-xs text-indigo-800">Selected: {answerSheet.name}</p>
+            ) : null}
+          </Card>
+
           {test.questions.map((q, index) => (
             <Card key={q.id} className="space-y-3">
               <p className="text-xs font-semibold uppercase text-muted">
@@ -194,18 +213,6 @@ export function WrittenTestPage({ testId }: { testId: string }) {
                   value={answers[q.id] || ""}
                   onChange={(e) =>
                     setAnswers((prev) => ({ ...prev, [q.id]: e.target.value }))
-                  }
-                />
-              </Field>
-              <Field label="Photo of handwritten answer">
-                <Input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={(e) =>
-                    setFiles((prev) => ({
-                      ...prev,
-                      [q.id]: e.target.files?.[0] || null,
-                    }))
                   }
                 />
               </Field>

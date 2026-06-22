@@ -115,51 +115,58 @@ export async function POST(
     response: string;
   }[];
 
-  for (const q of test.questions) {
-    const answer = answers.find((a) => a.questionId === q.id);
-    const hasText = answer?.response?.trim();
-    const file = formData.get(`file_${q.id}`);
-    if (!hasText && !(file instanceof File)) {
-      return NextResponse.json(
-        { error: "Each question needs a written answer or photo upload" },
-        { status: 400 }
-      );
-    }
-    if (file instanceof File && file.size > MAX_FILE_BYTES) {
-      return NextResponse.json(
-        { error: "Each photo must be 4 MB or smaller" },
-        { status: 400 }
-      );
-    }
+  const answerSheet = formData.get("answerSheet");
+  const hasPhoto = answerSheet instanceof File && answerSheet.size > 0;
+
+  if (hasPhoto && answerSheet.size > MAX_FILE_BYTES) {
+    return NextResponse.json(
+      { error: "Answer sheet photo must be 4 MB or smaller" },
+      { status: 400 }
+    );
   }
 
-  const answerCreates = await Promise.all(
-    test.questions.map(async (q) => {
-      const entry = answers.find((a) => a.questionId === q.id);
-      const file = formData.get(`file_${q.id}`);
-      let attachmentData: Uint8Array | undefined;
-      let attachmentMimeType: string | undefined;
-      let attachmentFileName: string | undefined;
+  const allTyped = test.questions.every((q) => {
+    const answer = answers.find((a) => a.questionId === q.id);
+    return !!answer?.response?.trim();
+  });
 
-      if (file instanceof File && file.size > 0) {
-        attachmentData = new Uint8Array(await file.arrayBuffer());
-        attachmentMimeType = file.type || "image/jpeg";
-        attachmentFileName = file.name;
-      }
+  if (!hasPhoto && !allTyped) {
+    return NextResponse.json(
+      {
+        error:
+          "Upload one photo of your answer sheet or type an answer for every question",
+      },
+      { status: 400 }
+    );
+  }
 
-      return {
-        questionId: q.id,
-        response: entry?.response?.trim() || "(See attached written answer)",
-        ...(attachmentData
-          ? {
-              attachmentData,
-              attachmentMimeType: attachmentMimeType!,
-              attachmentFileName: attachmentFileName!,
-            }
-          : {}),
-      };
-    })
-  );
+  let sheetData: Uint8Array | undefined;
+  let sheetMimeType: string | undefined;
+  let sheetFileName: string | undefined;
+
+  if (hasPhoto) {
+    sheetData = new Uint8Array(await answerSheet.arrayBuffer());
+    sheetMimeType = answerSheet.type || "image/jpeg";
+    sheetFileName = answerSheet.name;
+  }
+
+  const answerCreates = test.questions.map((q, index) => {
+    const entry = answers.find((a) => a.questionId === q.id);
+    const typed = entry?.response?.trim();
+    const attachSheet = hasPhoto && index === 0;
+
+    return {
+      questionId: q.id,
+      response: typed || (hasPhoto ? "(See answer sheet photo)" : ""),
+      ...(attachSheet && sheetData
+        ? {
+            attachmentData: sheetData,
+            attachmentMimeType: sheetMimeType!,
+            attachmentFileName: sheetFileName!,
+          }
+        : {}),
+    };
+  });
 
   const totalMarks = test.questions.reduce((sum, q) => sum + q.maxMarks, 0);
 

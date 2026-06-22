@@ -124,8 +124,25 @@ export function AdminGradingPanel({ attempts }: { attempts: Attempt[] }) {
                 Review & grade
               </Button>
 
-              {expanded === attempt.id ? (
+              {expanded === attempt.id ? (() => {
+                const answerSheet = attempt.answers.find(
+                  (a) => a.attachmentFileName
+                );
+                return (
                 <div className="mt-4 space-y-4 border-t border-border pt-4">
+                  {attempt.test.format === "WRITTEN" && answerSheet ? (
+                    <div className="rounded-xl bg-slate-50 p-3 text-sm">
+                      <p className="font-medium">Answer sheet photo</p>
+                      <p className="mt-1 text-xs text-muted">
+                        {answerSheet.attachmentFileName}
+                      </p>
+                      <img
+                        src={`/api/admin/answers/${answerSheet.id}/attachment`}
+                        alt="Student answer sheet"
+                        className="mt-2 max-h-96 w-full rounded-lg border border-border object-contain bg-white"
+                      />
+                    </div>
+                  ) : null}
                   {attempt.answers.map((answer) => (
                     <div
                       key={answer.id}
@@ -139,7 +156,8 @@ export function AdminGradingPanel({ attempts }: { attempts: Attempt[] }) {
                       ) : (
                         <p className="mt-1 italic text-muted">No typed answer</p>
                       )}
-                      {answer.attachmentFileName ? (
+                      {answer.attachmentFileName &&
+                      attempt.test.format !== "WRITTEN" ? (
                         <div className="mt-2">
                           <p className="text-xs text-muted">
                             Photo: {answer.attachmentFileName}
@@ -201,7 +219,8 @@ export function AdminGradingPanel({ attempts }: { attempts: Attempt[] }) {
                     Save grades & publish result
                   </Button>
                 </div>
-              ) : null}
+                );
+              })() : null}
             </Card>
           ))
         )}
